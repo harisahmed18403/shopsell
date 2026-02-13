@@ -36,7 +36,6 @@
                         <div class="font-bold text-[11px] truncate leading-tight" x-text="product.cex_name || product.name"></div>
                         <div class="flex items-center gap-2 mt-0.5">
                             <span class="badge badge-outline text-[8px] h-3.5 px-1 uppercase" x-text="'Grade ' + (product.grade || 'N/A')"></span>
-                            <span x-show="product.cex_name && product.cex_name !== product.name" class="text-[8px] opacity-50 italic truncate max-w-[100px]">M: <span x-text="product.name"></span></span>
                         </div>
                     </div>
 
@@ -49,11 +48,11 @@
                         </div>
                         
                         <!-- CeX Prices -->
-                        <div x-show="product.cex_sale" class="mt-0.5">
+                        <div x-show="product.cex_sale !== null || product.cex_cash !== null" class="mt-0.5">
                             <div class="flex gap-1 justify-end text-[7px] uppercase opacity-60 font-bold text-secondary">CeX</div>
                             <div class="flex gap-1.5 justify-end items-center">
-                                <div class="text-[9px] text-secondary font-semibold" x-text="'£' + parseFloat(product.cex_sale).toFixed(0)"></div>
-                                <div class="text-[9px] text-error font-semibold" x-text="'£' + parseFloat(product.cex_cash).toFixed(0)"></div>
+                                <div class="text-[9px] text-secondary font-semibold" x-text="'£' + parseFloat(product.cex_sale || 0).toFixed(0)"></div>
+                                <div class="text-[9px] text-error font-semibold" x-text="'£' + parseFloat(product.cex_cash || 0).toFixed(0)"></div>
                             </div>
                         </div>
                     </div>

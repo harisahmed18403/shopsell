@@ -16,9 +16,9 @@
         <div class="lg:col-span-2 space-y-6">
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
-                    <div class="flex flex-col md:flex-row gap-6">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">Product Information</h3>
+                    <div class="flex justify-between gap-6">
                         <div class="flex-1">
-                            <h3 class="font-bold text-lg mb-4 border-b pb-2">Product Information</h3>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="text-xs opacity-60 uppercase font-bold">Category</label>
@@ -39,12 +39,12 @@
                             </div>
                             <div class="mt-4">
                                 <label class="text-xs opacity-60 uppercase font-bold">Description</label>
-                                <p>{{ $product->description ?? 'No description provided.' }}</p>
+                                <p class="line-clamp-3">{{ $product->description ?? 'No description provided.' }}</p>
                             </div>
                         </div>
                         @if($product->cexProducts->isNotEmpty() && $product->cexProducts->first()->image_url)
-                            <div class="w-full md:w-48 flex-shrink-0 flex items-start justify-center">
-                                <img src="{{ $product->cexProducts->first()->image_url }}" alt="{{ $product->name }}" class="rounded-xl w-full h-48 object-contain bg-white border border-base-200 shadow-sm" />
+                            <div class="w-40 flex-shrink-0">
+                                <img src="{{ $product->cexProducts->first()->image_url }}" alt="{{ $product->name }}" class="rounded-xl w-full h-full max-h-48 object-contain bg-white border border-base-200 shadow-sm" />
                             </div>
                         @endif
                     </div>
