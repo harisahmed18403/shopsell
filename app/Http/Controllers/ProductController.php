@@ -17,24 +17,32 @@ class ProductController extends Controller
             return response()->json([]);
         }
 
-        $tokens = explode(' ', $search);
-        $query = Product::with('cexProducts');
-
+        $tokens = array_filter(explode(' ', $search), fn($t) => strlen(trim($t)) > 0);
+        
+        // 1. Find matching IDs from products table
+        $productQuery = Product::query()->select('id');
         foreach ($tokens as $token) {
-            $token = trim($token);
-            if (empty($token)) continue;
+            $productQuery->where('name', 'like', "%{$token}%");
+        }
+        $productIds = $productQuery->limit(50)->pluck('id')->toArray();
 
-            $query->where(function($q) use ($token) {
-                $q->where('name', 'like', "%{$token}%")
-                  ->orWhere('grade', 'like', "%{$token}%")
-                  ->orWhereHas('cexProducts', function($sq) use ($token) {
-                      $sq->where('name', 'like', "%{$token}%")
-                        ->orWhere('grade', 'like', "%{$token}%");
-                  });
-            });
+        // 2. Find matching IDs from cex_products table if we don't have enough
+        if (count($productIds) < 20) {
+            $cexQuery = \App\Models\CexProduct::query()->select('product_id');
+            foreach ($tokens as $token) {
+                $cexQuery->where('name', 'like', "%{$token}%");
+            }
+            $cexProductIds = $cexQuery->limit(50)->pluck('product_id')->toArray();
+            $productIds = array_unique(array_merge($productIds, $cexProductIds));
         }
 
-        $products = $query->limit(20)
+        if (empty($productIds)) {
+            return response()->json([]);
+        }
+
+        // 3. Fetch full products with variants
+        $products = Product::with('cexProducts')
+            ->whereIn('id', $productIds)
             ->get()
             ->map(function ($product) use ($tokens) {
                 // Score each variant and find the best one
