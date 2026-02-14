@@ -93,21 +93,29 @@
 
                                                 <!-- Search Results -->
                                                 <div x-show="item.showResults && item.searchResults.length > 0" 
-                                                     class="absolute z-[100] w-full mt-7 bg-base-100 shadow-2xl rounded-box border border-base-300 max-h-48 overflow-y-auto left-0"
+                                                     class="absolute z-[100] w-full mt-7 bg-base-100 shadow-2xl rounded-box border border-base-300 max-h-64 overflow-y-auto left-0"
                                                      style="display: none;">
                                                     <template x-for="res in item.searchResults" :key="res.id">
-                                                        <button type="button" 
-                                                                @click="selectProduct(index, res)"
-                                                                class="w-full text-left px-2 py-1.5 hover:bg-base-200 flex items-center gap-2 border-b border-base-200 last:border-0">
-                                                            <div class="w-6 h-6 flex-shrink-0">
-                                                                <img :src="res.image_url" class="w-full h-full object-contain bg-white rounded border border-base-200">
+                                                        <div class="flex flex-col border-b border-base-200 last:border-0 p-2 gap-2">
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="w-6 h-6 flex-shrink-0">
+                                                                    <img :src="res.image_url" class="w-full h-full object-contain bg-white rounded border border-base-200">
+                                                                </div>
+                                                                <div class="text-[10px] font-bold truncate flex-1" x-text="res.name"></div>
                                                             </div>
-                                                            <div class="flex-1 min-w-0">
-                                                                <div class="text-[10px] font-bold truncate" x-text="res.name"></div>
-                                                                <div class="text-[8px] opacity-60" x-text="'Grade ' + (res.grade || 'N/A')"></div>
+                                                            <div class="flex flex-wrap gap-1">
+                                                                <template x-for="v in res.variants" :key="v.grade">
+                                                                    <button type="button" 
+                                                                            @click="selectProduct(index, res, v)"
+                                                                            class="flex-1 min-w-[50px] flex flex-col items-center bg-base-200 hover:bg-primary hover:text-primary-content rounded p-1 transition-colors group">
+                                                                        <span class="text-[8px] font-black opacity-60 uppercase group-hover:opacity-100" x-text="'Grade ' + v.grade"></span>
+                                                                        <div class="flex flex-col items-center leading-none mt-0.5">
+                                                                            <span class="text-[9px] font-bold" x-text="'£' + parseFloat(type === 'sell' ? v.sale : v.cash).toFixed(0)"></span>
+                                                                        </div>
+                                                                    </button>
+                                                                </template>
                                                             </div>
-                                                            <div class="text-[10px] font-bold text-primary">£<span x-text="parseFloat(res.sale_price).toFixed(0)"></span></div>
-                                                        </button>
+                                                        </div>
                                                     </template>
                                                 </div>
 
@@ -190,17 +198,17 @@
                     }
                 },
 
-                selectProduct(index, product) {
+                selectProduct(index, product, variant) {
                     this.items[index].product_id = product.id;
-                    this.items[index].search = product.name + (product.grade ? ' ('+product.grade+')' : '');
-                    this.items[index].description = product.name;
+                    this.items[index].search = product.name + (variant.grade ? ' ('+variant.grade+')' : '');
+                    this.items[index].description = product.name + (variant.grade ? ' - Grade ' + variant.grade : '');
                     this.items[index].showResults = false;
                     
-                    // Set price based on transaction type
+                    // Set price based on transaction type and selected variant
                     if (this.type === 'sell') {
-                        this.items[index].price = product.sale_price || 0;
+                        this.items[index].price = variant.sale || 0;
                     } else if (this.type === 'buy') {
-                        this.items[index].price = product.cash_price || 0;
+                        this.items[index].price = variant.cash || 0;
                     } else {
                         this.items[index].price = 0;
                     }

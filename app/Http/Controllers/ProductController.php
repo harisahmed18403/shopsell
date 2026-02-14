@@ -45,25 +45,26 @@ class ProductController extends Controller
             ->whereIn('id', $productIds)
             ->get()
             ->map(function ($product) use ($tokens) {
-                // Score each variant and find the best one
-                $variantsWithScores = $product->cexProducts->map(function($cex) use ($tokens) {
-                    $score = 0;
-                    $fullName = strtoupper($cex->name . ' ' . $cex->grade);
-                    foreach ($tokens as $token) {
-                        if (str_contains($fullName, strtoupper($token))) {
-                            $score++;
-                        }
-                    }
-                    if ($cex->grade === 'B') $score += 0.1;
-                    $cex->match_score = $score;
-                    return $cex;
+                // Get all variants grouped by grade, sorted A -> B -> C
+                $variants = $product->cexProducts->sortBy(function($cex) {
+                    return match($cex->grade) {
+                        'A' => 1,
+                        'B' => 2,
+                        'C' => 3,
+                        default => 4
+                    };
+                })->values()->map(function($cex) {
+                    return [
+                        'grade' => $cex->grade,
+                        'sale' => $cex->sale_price,
+                        'cash' => $cex->cash_price,
+                        'voucher' => $cex->voucher_price,
+                    ];
                 });
 
-                $bestCex = $variantsWithScores->sortByDesc('match_score')->first();
-                
-                // Calculate master product score
+                // Calculate relevance score for sorting
                 $productScore = 0;
-                $productFullName = strtoupper($product->name . ' ' . $product->grade);
+                $productFullName = strtoupper($product->name);
                 foreach ($tokens as $token) {
                     if (str_contains($productFullName, strtoupper($token))) {
                         $productScore++;
@@ -73,20 +74,13 @@ class ProductController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'grade' => $product->grade,
-                    'sale_price' => $product->sale_price,
-                    'cash_price' => $product->cash_price,
-                    'voucher_price' => $product->voucher_price,
-                    'image_url' => $bestCex?->image_url ?? 'https://via.placeholder.com/150',
-                    'cex_sale' => $bestCex?->sale_price,
-                    'cex_cash' => $bestCex?->cash_price,
-                    'cex_voucher' => $bestCex?->voucher_price,
-                    'cex_name' => $bestCex?->name,
+                    'image_url' => $product->cexProducts->first()?->image_url ?? 'https://via.placeholder.com/150',
+                    'variants' => $variants,
                     'url' => route('products.show', $product),
-                    'overall_score' => max($productScore, $bestCex?->match_score ?? 0)
+                    'score' => $productScore
                 ];
             })
-            ->sortByDesc('overall_score')
+            ->sortByDesc('score')
             ->values()
             ->take(10);
 

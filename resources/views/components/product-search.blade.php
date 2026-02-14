@@ -21,40 +21,34 @@
     <div 
         x-show="showDropdown && results.length > 0" 
         x-transition
-        class="absolute z-50 w-full mt-2 bg-base-100 shadow-2xl rounded-box border border-base-300 max-h-[400px] overflow-y-auto overflow-x-hidden"
+        class="absolute z-50 w-full mt-2 bg-base-100 shadow-2xl rounded-box border border-base-300 max-h-[500px] overflow-y-auto overflow-x-hidden"
     >
         <div class="p-1">
             <template x-for="product in results" :key="product.id">
-                <a :href="product.url" class="flex items-center gap-2 p-1.5 hover:bg-base-200 rounded-lg transition-colors border-b border-base-100 last:border-0">
-                    <div class="avatar flex-shrink-0">
-                        <div class="w-8 h-8 rounded-md overflow-hidden">
-                            <img :src="product.image_url" :alt="product.name" loading="lazy" class="object-cover w-full h-full" />
+                <a :href="product.url" class="flex flex-col gap-2 p-2 hover:bg-base-200 rounded-lg transition-colors border-b border-base-100 last:border-0">
+                    <div class="flex items-center gap-3">
+                        <div class="avatar flex-shrink-0">
+                            <div class="w-10 h-10 rounded-md overflow-hidden bg-white border border-base-200">
+                                <img :src="product.image_url" :alt="product.name" loading="lazy" class="object-contain w-full h-full" />
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="flex-1 min-w-0">
-                        <div class="font-bold text-[11px] truncate leading-tight" x-text="product.cex_name || product.name"></div>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            <span class="badge badge-outline text-[8px] h-3.5 px-1 uppercase" x-text="'Grade ' + (product.grade || 'N/A')"></span>
+                        
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-xs truncate" x-text="product.name"></div>
                         </div>
                     </div>
 
-                    <div class="text-right flex flex-col gap-0 flex-shrink-0">
-                        <!-- Shop Prices -->
-                        <div class="flex gap-1 justify-end text-[7px] uppercase opacity-60 font-bold">Shop</div>
-                        <div class="flex gap-1.5 justify-end items-center">
-                            <div class="text-[9px] font-bold text-primary" x-text="'£' + parseFloat(product.sale_price).toFixed(0)"></div>
-                            <div class="text-[9px] font-bold text-error" x-text="'£' + parseFloat(product.cash_price).toFixed(0)"></div>
-                        </div>
-                        
-                        <!-- CeX Prices -->
-                        <div x-show="product.cex_sale !== null || product.cex_cash !== null" class="mt-0.5">
-                            <div class="flex gap-1 justify-end text-[7px] uppercase opacity-60 font-bold text-secondary">CeX</div>
-                            <div class="flex gap-1.5 justify-end items-center">
-                                <div class="text-[9px] text-secondary font-semibold" x-text="'£' + parseFloat(product.cex_sale || 0).toFixed(0)"></div>
-                                <div class="text-[9px] text-error font-semibold" x-text="'£' + parseFloat(product.cex_cash || 0).toFixed(0)"></div>
+                    <!-- Grades Row -->
+                    <div class="flex flex-wrap gap-2 px-1 pb-1">
+                        <template x-for="v in product.variants" :key="v.grade">
+                            <div class="flex flex-col items-center bg-base-100 border border-base-300 rounded p-1 min-w-[60px] shadow-sm">
+                                <span class="text-[9px] font-black opacity-50 uppercase" x-text="'Grade ' + v.grade"></span>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[10px] font-bold text-primary" x-text="'S: £' + parseFloat(v.sale).toFixed(0)"></span>
+                                    <span class="text-[10px] font-bold text-error" x-text="'C: £' + parseFloat(v.cash).toFixed(0)"></span>
+                                </div>
                             </div>
-                        </div>
+                        </template>
                     </div>
                 </a>
             </template>
