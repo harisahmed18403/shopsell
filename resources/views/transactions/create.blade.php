@@ -96,22 +96,22 @@
                                                      class="absolute z-[100] w-full mt-7 bg-base-100 shadow-2xl rounded-box border border-base-300 max-h-64 overflow-y-auto left-0"
                                                      style="display: none;">
                                                     <template x-for="res in item.searchResults" :key="res.id">
-                                                        <div class="flex flex-col border-b border-base-200 last:border-0 p-2 gap-2">
-                                                            <div class="flex items-center gap-2">
+                                                        <div class="flex flex-col border-b border-base-200 last:border-0 hover:bg-base-200/50 transition-colors">
+                                                            <!-- Main Product Row (Click to select base product) -->
+                                                            <div @click="selectProduct(index, res)" class="flex items-center gap-2 p-2 cursor-pointer">
                                                                 <div class="w-6 h-6 flex-shrink-0">
                                                                     <img :src="res.image_url" class="w-full h-full object-contain bg-white rounded border border-base-200">
                                                                 </div>
                                                                 <div class="text-[10px] font-bold truncate flex-1" x-text="res.name"></div>
                                                             </div>
-                                                            <div class="flex flex-wrap gap-1">
+                                                            <!-- Grade reference badges -->
+                                                            <div class="flex flex-wrap gap-1 px-2 pb-2">
                                                                 <template x-for="v in res.variants" :key="v.grade">
                                                                     <button type="button" 
                                                                             @click="selectProduct(index, res, v)"
-                                                                            class="flex-1 min-w-[50px] flex flex-col items-center bg-base-200 hover:bg-primary hover:text-primary-content rounded p-1 transition-colors group">
-                                                                        <span class="text-[8px] font-black opacity-60 uppercase group-hover:opacity-100" x-text="'Grade ' + v.grade"></span>
-                                                                        <div class="flex flex-col items-center leading-none mt-0.5">
-                                                                            <span class="text-[9px] font-bold" x-text="'£' + parseFloat(type === 'sell' ? v.sale : v.cash).toFixed(0)"></span>
-                                                                        </div>
+                                                                            class="badge badge-outline badge-xs py-2 hover:badge-primary cursor-pointer transition-colors flex gap-1 items-center">
+                                                                        <span class="font-black" x-text="v.grade"></span>
+                                                                        <span class="opacity-70" x-text="'£' + parseFloat(type === 'sell' ? v.sale : v.cash).toFixed(0)"></span>
                                                                     </button>
                                                                 </template>
                                                             </div>
@@ -198,20 +198,19 @@
                     }
                 },
 
-                selectProduct(index, product, variant) {
+                selectProduct(index, product, variant = null) {
                     this.items[index].product_id = product.id;
-                    this.items[index].search = product.name + (variant.grade ? ' ('+variant.grade+')' : '');
-                    this.items[index].description = product.name + (variant.grade ? ' - Grade ' + variant.grade : '');
+                    this.items[index].search = product.name + (variant ? ' ('+variant.grade+')' : '');
+                    this.items[index].description = product.name + (variant ? ' - Grade ' + variant.grade : '');
                     this.items[index].showResults = false;
                     
-                    // Set price based on transaction type and selected variant
-                    if (this.type === 'sell') {
-                        this.items[index].price = variant.sale || 0;
-                    } else if (this.type === 'buy') {
-                        this.items[index].price = variant.cash || 0;
-                    } else {
-                        this.items[index].price = 0;
+                    // Do not auto-populate price as per user request, user will enter manually
+                    // If you want to populate it as a starting point, uncomment below
+                    /*
+                    if (variant) {
+                        this.items[index].price = (this.type === 'sell') ? variant.sale : variant.cash;
                     }
+                    */
                 },
                 
                 calculateTotal() {
