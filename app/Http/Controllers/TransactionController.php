@@ -35,11 +35,10 @@ class TransactionController extends Controller
     public function create()
     {
         $customers = Customer::all();
-        $products = Product::all();
         if (request()->wantsJson()) {
-            return response()->json(['customers' => $customers, 'products' => $products]);
+            return response()->json(['customers' => $customers]);
         }
-        return view('transactions.create', compact('customers', 'products'));
+        return view('transactions.create', compact('customers'));
     }
 
     public function store(Request $request)
