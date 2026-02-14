@@ -105,8 +105,8 @@
                                                                 <div class="text-[10px] font-bold truncate flex-1" x-text="res.name"></div>
                                                             </div>
                                                             <!-- Grade reference badges -->
-                                                            <div class="flex flex-wrap gap-1 px-2 pb-2">
-                                                                <template x-for="v in res.variants" :key="v.grade">
+                                                            <div class="flex flex-wrap gap-1 px-2 pb-2" x-show="res.variants && res.variants.length > 0">
+                                                                <template x-for="(v, vIdx) in res.variants" :key="res.id + '-' + v.grade + '-' + vIdx">
                                                                     <button type="button" 
                                                                             @click="selectProduct(index, res, v)"
                                                                             class="badge badge-outline badge-xs py-2 hover:badge-primary cursor-pointer transition-colors flex gap-1 items-center">

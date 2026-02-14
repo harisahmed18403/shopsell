@@ -45,22 +45,24 @@ class ProductController extends Controller
             ->whereIn('id', $productIds)
             ->get()
             ->map(function ($product) use ($tokens) {
-                // Get all variants grouped by grade, sorted A -> B -> C
-                $variants = $product->cexProducts->sortBy(function($cex) {
-                    return match($cex->grade) {
-                        'A' => 1,
-                        'B' => 2,
-                        'C' => 3,
-                        default => 4
-                    };
-                })->values()->map(function($cex) {
-                    return [
-                        'grade' => $cex->grade,
-                        'sale' => $cex->sale_price,
-                        'cash' => $cex->cash_price,
-                        'voucher' => $cex->voucher_price,
-                    ];
-                });
+                // Get variants, unique by grade, sorted A -> B -> C
+                $variants = $product->cexProducts->sortByDesc('sale_price') // Take most expensive if duplicate grade
+                    ->unique('grade')
+                    ->sortBy(function($cex) {
+                        return match($cex->grade) {
+                            'A' => 1,
+                            'B' => 2,
+                            'C' => 3,
+                            default => 4
+                        };
+                    })->values()->map(function($cex) {
+                        return [
+                            'grade' => $cex->grade ?? 'N/A',
+                            'sale' => $cex->sale_price,
+                            'cash' => $cex->cash_price,
+                            'voucher' => $cex->voucher_price,
+                        ];
+                    });
 
                 // Calculate relevance score for sorting
                 $productScore = 0;
@@ -75,7 +77,7 @@ class ProductController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'image_url' => $product->cexProducts->first()?->image_url ?? 'https://via.placeholder.com/150',
-                    'variants' => $variants,
+                    'variants' => $variants ?? [],
                     'url' => route('products.show', $product),
                     'score' => $productScore
                 ];
