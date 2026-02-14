@@ -49,7 +49,14 @@
                             <td class="font-bold">£{{ number_format($transaction->total_amount, 2) }}</td>
                             <td><span class="badge badge-xs badge-success">{{ $transaction->status }}</span></td>
                             <td class="text-right">
-                                <a href="{{ route('transactions.show', $transaction) }}" class="btn btn-ghost btn-xs text-primary p-1 h-auto min-h-0">Details</a>
+                                <div class="flex justify-end gap-1">
+                                    <a href="{{ route('transactions.show', $transaction) }}" class="btn btn-ghost btn-xs text-primary p-1 h-auto min-h-0">Details</a>
+                                    <form action="{{ route('transactions.destroy', $transaction) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this transaction? This will reverse any stock changes.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-ghost btn-xs text-error p-1 h-auto min-h-0">Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

@@ -117,6 +117,44 @@ class TransactionController extends Controller
         return view('transactions.show', compact('transaction'));
     }
 
+    public function destroy(Transaction $transaction)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Reverse Stock Changes
+            foreach ($transaction->items as $item) {
+                if ($item->product_id) {
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        if ($transaction->type === 'sell') {
+                            $product->increment('quantity', $item->quantity);
+                        } elseif ($transaction->type === 'buy') {
+                            $product->decrement('quantity', $item->quantity);
+                        }
+                    }
+                }
+            }
+
+            $transaction->delete();
+
+            DB::commit();
+
+            if (request()->wantsJson()) {
+                return response()->json(['message' => 'Transaction deleted and stock reversed.']);
+            }
+
+            return redirect()->route('transactions.index')->with('success', 'Transaction deleted and stock updated.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Error deleting transaction: ' . $e->getMessage());
+        }
+    }
+
     // Edit/Update is complex for transactions (stock revert?), skipping for brevity unless requested.
     // Usually transactions are immutable or strictly controlled.
 }
