@@ -180,7 +180,7 @@
 
                     this.items[index].loading = true;
                     try {
-                        const response = await fetch(`/products/search?q=${encodeURIComponent(query)}`);
+                        const response = await fetch("{{ route('products.search') }}?q=" + encodeURIComponent(query));
                         this.items[index].searchResults = await response.json();
                         this.items[index].showResults = true;
                     } catch (error) {

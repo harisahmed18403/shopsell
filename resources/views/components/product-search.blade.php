@@ -79,7 +79,7 @@
 
                 this.loading = true;
                 try {
-                    const response = await fetch(`/products/search?q=${encodeURIComponent(this.query)}`);
+                    const response = await fetch("{{ route('products.search') }}?q=" + encodeURIComponent(this.query));
                     this.results = await response.json();
                     this.showDropdown = true;
                 } catch (error) {
