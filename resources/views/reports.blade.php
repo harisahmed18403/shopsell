@@ -1,14 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Sales Reports') }}
-        </h2>
-    </x-slot>
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-lg font-bold uppercase tracking-wider opacity-70">Sales Reports</h1>
+    </div>
 
-    <div class="card bg-base-100 shadow mb-6">
-        <div class="card-body">
-            <h2 class="card-title mb-4">Monthly Sales Revenue</h2>
-            <div style="height: 400px;">
+    <div class="card bg-base-100 shadow-sm rounded-sm border border-base-300 mb-6">
+        <div class="card-body p-4">
+            <h2 class="font-bold text-xs uppercase opacity-60 mb-4 border-b pb-2">Monthly Sales Revenue</h2>
+            <div style="height: 300px;">
                 <canvas id="salesChart"></canvas>
             </div>
         </div>

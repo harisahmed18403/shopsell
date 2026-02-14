@@ -19,12 +19,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Create Super Admin (No Org)
-        User::factory()->create([
+        User::create([
             'name' => 'Super Admin',
             'email' => 'admin@saas.com',
             'password' => Hash::make('password'),
             'role' => 'super_admin',
             'organization_id' => null,
+            'email_verified_at' => now(),
         ]);
 
         // 2. Create Organization
@@ -34,12 +35,13 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 3. Create Org Admin
-        User::factory()->create([
+        User::create([
             'name' => 'Shop Owner',
             'email' => 'owner@shopa.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'organization_id' => $org->id,
+            'email_verified_at' => now(),
         ]);
 
         // 4. Create Product Structure (Global for now, org_id = null)

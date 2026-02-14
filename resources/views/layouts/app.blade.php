@@ -14,18 +14,9 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-base-200">
+    <body class="font-sans antialiased bg-base-200 text-sm">
         <div class="min-h-screen">
             @include('layouts.navigation')
-
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-base-100 shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
 
             <!-- Page Content -->
             <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">

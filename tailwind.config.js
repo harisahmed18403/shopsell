@@ -32,6 +32,9 @@ export default {
                     "success": "#009485",
                     "warning": "#ff9900",
                     "error": "#ff5724",
+                    "--rounded-box": "0.25rem", // Less rounding
+                    "--rounded-btn": "0.125rem",
+                    "--rounded-badge": "0.125rem",
                 },
             },
             "light",

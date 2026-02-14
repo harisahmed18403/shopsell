@@ -1,3 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    /* Fix for text being cut off in selects and dropdown triggers */
+    .select, .select-sm, .select-xs, .btn-sm, .btn-xs {
+        line-height: normal !important;
+    }
+    
+    .select-sm {
+        @apply py-0;
+        min-height: 2rem;
+        height: 2rem;
+    }
+    
+    .select-xs {
+        @apply py-0;
+        min-height: 1.5rem;
+        height: 1.5rem;
+    }
+}
