@@ -13,7 +13,7 @@ class RefreshCexPrices extends Command
      *
      * @var string
      */
-    protected $signature = 'cex:refresh {--category-id= : CeX Category ID to refresh} {--limit=10 : Number of items per category} {--all : Sync all Apple and Android phones}';
+    protected $signature = 'cex:refresh {--category-id= : CeX Category ID to refresh} {--limit= : Number of items per category (leave empty for unlimited)} {--all : Sync all Apple and Android phones}';
 
     /**
      * The console command description.
@@ -28,7 +28,7 @@ class RefreshCexPrices extends Command
     public function handle(CexService $cexService)
     {
         $categoryId = $this->option('category-id');
-        $limit = (int) $this->option('limit');
+        $limit = $this->option('limit') !== null ? (int) $this->option('limit') : null;
         $syncAll = $this->option('all');
 
         if ($syncAll) {
@@ -37,11 +37,11 @@ class RefreshCexPrices extends Command
             $this->info("Synced $count products in total.");
         } elseif ($categoryId) {
             $this->info("Refreshing products for CeX Category ID: $categoryId...");
-            $count = $cexService->syncCategoryProducts($categoryId, $limit);
+            $count = $cexService->syncCategoryProducts((int) $categoryId, $limit);
             $this->info("Synced $count products.");
         } else {
             $this->info("No options provided. Syncing default category 1225 (iPhone 11)...");
-            $count = $cexService->syncCategoryProducts(1225, $limit);
+            $count = $cexService->syncCategoryProducts(1225, $limit ?? 10);
             $this->info("Synced $count products.");
         }
 

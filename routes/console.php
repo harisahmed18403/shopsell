@@ -9,4 +9,4 @@ Artisan::command('inspire', function () {
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('cex:refresh --all --limit=100')->daily();
+Schedule::command('cex:refresh --all')->dailyAt('03:00');

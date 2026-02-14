@@ -145,7 +145,7 @@ class CexService
         Log::info("Phone Taxonomy sync completed.");
     }
 
-    public function syncAllPhones($limitPerCategory = 500)
+    public function syncAllPhones(?int $limitPerCategory = null)
     {
         $this->syncPhoneTaxonomy();
 
@@ -163,21 +163,23 @@ class CexService
         return $totalSynced;
     }
 
-    public function syncCategoryProducts(int $categoryId, $limit = 100)
+    public function syncCategoryProducts(int $categoryId, ?int $limit = null)
     {
-        Log::info("Syncing products for Category ID: $categoryId (Limit: $limit)");
+        Log::info("Syncing products for Category ID: $categoryId (Limit: " . ($limit ?? 'Unlimited') . ")");
         
         $page = 0;
         $processedCount = 0;
         
-        while ($processedCount < $limit) {
+        while (true) {
+            if ($limit !== null && $processedCount >= $limit) break;
+
             $results = $this->searchProducts("", ["categoryId:$categoryId"], $page, 100);
             $hits = $results['hits'] ?? [];
             
             if (empty($hits)) break;
 
             foreach ($hits as $hit) {
-                if ($processedCount >= $limit) break;
+                if ($limit !== null && $processedCount >= $limit) break;
                 
                 if ($this->updateOrCreateCexProduct($hit)) {
                     $processedCount++;
