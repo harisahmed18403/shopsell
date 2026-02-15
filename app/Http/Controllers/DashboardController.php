@@ -16,15 +16,16 @@ class DashboardController extends Controller
         $startOfWeek = Carbon::now()->startOfWeek();
         $startOfMonth = Carbon::now()->startOfMonth();
 
-        $dailySales = Transaction::where('type', 'sell')
+        // Revenue from both 'sell' and 'repair'
+        $dailySales = Transaction::whereIn('type', ['sell', 'repair'])
             ->whereDate('created_at', $today)
             ->sum('total_amount');
 
-        $weeklySales = Transaction::where('type', 'sell')
+        $weeklySales = Transaction::whereIn('type', ['sell', 'repair'])
             ->whereBetween('created_at', [$startOfWeek, Carbon::now()])
             ->sum('total_amount');
 
-        $monthlySales = Transaction::where('type', 'sell')
+        $monthlySales = Transaction::whereIn('type', ['sell', 'repair'])
             ->whereBetween('created_at', [$startOfMonth, Carbon::now()])
             ->sum('total_amount');
 
@@ -48,8 +49,8 @@ class DashboardController extends Controller
 
     public function reports()
     {
-        // Monthly sales for the last 6 months
-        $monthlyData = Transaction::where('type', 'sell')
+        // Monthly sales (Sell + Repair)
+        $monthlyData = Transaction::whereIn('type', ['sell', 'repair'])
             ->select(
                 DB::raw('sum(total_amount) as total'),
                 DB::raw("strftime('%Y-%m', created_at) as month")
@@ -59,6 +60,28 @@ class DashboardController extends Controller
             ->orderBy('month')
             ->get();
 
-        return view('reports', compact('monthlyData'));
+        // Buy vs Sell comparison
+        $buyVsSell = Transaction::select(
+                DB::raw('type'),
+                DB::raw('sum(total_amount) as total'),
+                DB::raw("strftime('%Y-%m', created_at) as month")
+            )
+            ->whereIn('type', ['buy', 'sell'])
+            ->where('created_at', '>=', Carbon::now()->subMonths(6))
+            ->groupBy('month', 'type')
+            ->orderBy('month')
+            ->get();
+
+        // Profit (Sell + Repair - Buy)
+        $profitData = Transaction::select(
+                DB::raw("strftime('%Y-%m', created_at) as month"),
+                DB::raw("SUM(CASE WHEN type IN ('sell', 'repair') THEN total_amount ELSE 0 END) - SUM(CASE WHEN type = 'buy' THEN total_amount ELSE 0 END) as profit")
+            )
+            ->where('created_at', '>=', Carbon::now()->subMonths(6))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        return view('reports', compact('monthlyData', 'buyVsSell', 'profitData'));
     }
 }

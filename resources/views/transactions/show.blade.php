@@ -2,6 +2,7 @@
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-lg font-bold uppercase tracking-wider opacity-70">Transaction #{{ $transaction->id }}</h1>
         <div class="flex gap-2">
+            <a href="{{ route('transactions.invoice', $transaction) }}" class="btn btn-neutral btn-sm" target="_blank">Download Invoice</a>
             <button onclick="window.print()" class="btn btn-ghost btn-sm">Print</button>
             <a href="{{ route('transactions.index') }}" class="btn btn-ghost btn-sm">Back</a>
         </div>

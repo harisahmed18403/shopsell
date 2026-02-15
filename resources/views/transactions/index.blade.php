@@ -51,6 +51,8 @@
                             <td class="text-right">
                                 <div class="flex justify-end gap-1">
                                     <a href="{{ route('transactions.show', $transaction) }}" class="btn btn-ghost btn-xs text-primary p-1 h-auto min-h-0">Details</a>
+                                    <a href="{{ route('transactions.edit', $transaction) }}" class="btn btn-ghost btn-xs text-info p-1 h-auto min-h-0">Edit</a>
+                                    <a href="{{ route('transactions.invoice', $transaction) }}" class="btn btn-ghost btn-xs text-success p-1 h-auto min-h-0" target="_blank">Invoice</a>
                                     <form action="{{ route('transactions.destroy', $transaction) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this transaction? This will reverse any stock changes.')">
                                         @csrf
                                         @method('DELETE')

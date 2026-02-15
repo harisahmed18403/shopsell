@@ -29,7 +29,10 @@ Route::middleware('auth')->group(function () {
     // Standard Routes
     Route::get('products/search', [\App\Http\Controllers\ProductController::class, 'search'])->name('products.search');
     Route::resource('products', \App\Http\Controllers\ProductController::class);
+    
+    Route::get('transactions/{transaction}/invoice', [\App\Http\Controllers\TransactionController::class, 'downloadInvoice'])->name('transactions.invoice');
     Route::resource('transactions', \App\Http\Controllers\TransactionController::class);
+    
     Route::resource('customers', \App\Http\Controllers\CustomerController::class);
 });
 

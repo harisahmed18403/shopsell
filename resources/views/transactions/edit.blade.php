@@ -1,12 +1,83 @@
 <x-app-layout>
+    @php
+        $initialItems = $transaction->items->map(function($item) {
+            return [
+                'product_id' => $item->product_id,
+                'description' => $item->description,
+                'quantity' => $item->quantity,
+                'price' => (float) $item->price,
+                'search' => $item->description,
+                'searchResults' => [],
+                'showResults' => false,
+                'loading' => false,
+            ];
+        })->values();
+    @endphp
+
+    <script>
+        function transactionForm() {
+            return {
+                type: '{{ $transaction->type }}',
+                items: {!! json_encode($initialItems) !!},
+                
+                addItem() {
+                    this.items.push({ 
+                        product_id: '', 
+                        description: '', 
+                        quantity: 1, 
+                        price: 0, 
+                        search: '', 
+                        searchResults: [], 
+                        showResults: false, 
+                        loading: false 
+                    });
+                },
+                
+                removeItem(index) {
+                    this.items.splice(index, 1);
+                },
+
+                async searchProduct(index) {
+                    const query = this.items[index].search;
+                    if (query.length < 2) {
+                        this.items[index].searchResults = [];
+                        return;
+                    }
+                    this.items[index].loading = true;
+                    try {
+                        const response = await fetch("{{ route('products.search') }}?q=" + encodeURIComponent(query));
+                        this.items[index].searchResults = await response.json();
+                        this.items[index].showResults = true;
+                    } catch (error) {
+                        console.error('Search failed:', error);
+                    } finally {
+                        this.items[index].loading = false;
+                    }
+                },
+
+                selectProduct(index, product, variant = null) {
+                    this.items[index].product_id = product.id;
+                    this.items[index].search = product.name + (variant ? ' ('+variant.grade+')' : '');
+                    this.items[index].description = product.name + (variant ? ' - Grade ' + variant.grade : '');
+                    this.items[index].showResults = false;
+                },
+                
+                calculateTotal() {
+                    return this.items.reduce((total, item) => total + (item.quantity * (item.price || 0)), 0).toFixed(2);
+                }
+            }
+        }
+    </script>
+
     <div class="flex justify-between items-center mb-4">
-        <h1 class="text-lg font-bold uppercase tracking-wider opacity-70">New Transaction</h1>
+        <h1 class="text-lg font-bold uppercase tracking-wider opacity-70">Edit Transaction #{{ $transaction->id }}</h1>
         <a href="{{ route('transactions.index') }}" class="btn btn-ghost btn-sm">Cancel</a>
     </div>
 
     <div class="" x-data="transactionForm()">
-        <form action="{{ route('transactions.store') }}" method="POST">
+        <form action="{{ route('transactions.update', $transaction) }}" method="POST">
             @csrf
+            @method('PUT')
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <!-- Transaction Type -->
@@ -28,7 +99,7 @@
                                 <select name="customer_id" class="select select-bordered select-sm w-full">
                                     <option value="">Walk-in Customer</option>
                                     @foreach($customers as $customer)
-                                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                        <option value="{{ $customer->id }}" {{ $transaction->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -44,7 +115,7 @@
                             <span class="text-sm font-semibold opacity-70">Total Amount:</span>
                             <span class="text-2xl font-bold text-primary">£<span x-text="calculateTotal()"></span></span>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm w-full">Complete</button>
+                        <button type="submit" class="btn btn-primary btn-sm w-full">Update Transaction</button>
                     </div>
                 </div>
             </div>
@@ -146,77 +217,4 @@
             </div>
         </form>
     </div>
-
-    <script>
-        function transactionForm() {
-            return {
-                type: 'sell',
-                items: [{ 
-                    product_id: '', 
-                    description: '', 
-                    quantity: 1, 
-                    price: 0, 
-                    search: '', 
-                    searchResults: [], 
-                    showResults: false, 
-                    loading: false 
-                }],
-                
-                addItem() {
-                    this.items.push({ 
-                        product_id: '', 
-                        description: '', 
-                        quantity: 1, 
-                        price: 0, 
-                        search: '', 
-                        searchResults: [], 
-                        showResults: false, 
-                        loading: false 
-                    });
-                },
-                
-                removeItem(index) {
-                    this.items.splice(index, 1);
-                },
-
-                async searchProduct(index) {
-                    const query = this.items[index].search;
-                    if (query.length < 2) {
-                        this.items[index].searchResults = [];
-                        return;
-                    }
-
-                    this.items[index].loading = true;
-                    try {
-                        const response = await fetch("{{ route('products.search') }}?q=" + encodeURIComponent(query));
-                        this.items[index].searchResults = await response.json();
-                        this.items[index].showResults = true;
-                    } catch (error) {
-                        console.error('Search failed:', error);
-                    } finally {
-                        this.items[index].loading = false;
-                    }
-                },
-
-                selectProduct(index, product, variant = null) {
-                    this.items[index].product_id = product.id;
-                    this.items[index].search = product.name + (variant ? ' ('+variant.grade+')' : '');
-                    this.items[index].description = product.name + (variant ? ' - Grade ' + variant.grade : '');
-                    this.items[index].showResults = false;
-                    
-                    // Do not auto-populate price as per user request, user will enter manually
-                    // If you want to populate it as a starting point, uncomment below
-                    /*
-                    if (variant) {
-                        this.items[index].price = (this.type === 'sell') ? variant.sale : variant.cash;
-                    }
-                    */
-                },
-                
-                calculateTotal() {
-                    return this.items.reduce((total, item) => total + (item.quantity * (item.price || 0)), 0).toFixed(2);
-                }
-            }
-        }
-    </script>
 </x-app-layout>
