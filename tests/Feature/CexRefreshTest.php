@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\Organization;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\SuperCategory;
@@ -18,15 +17,12 @@ class CexRefreshTest extends TestCase
     use RefreshDatabase;
 
     protected $user;
-    protected $organization;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->organization = Organization::create(['name' => 'Test Org']);
         $this->user = User::factory()->create([
-            'organization_id' => $this->organization->id,
             'role' => 'admin',
         ]);
 
@@ -37,9 +33,7 @@ class CexRefreshTest extends TestCase
         Product::create([
             'name' => 'iPhone 11 64GB Black',
             'category_id' => $category->id,
-            'organization_id' => $this->organization->id,
             'sale_price' => 200,
-            'quantity' => 5,
         ]);
     }
 

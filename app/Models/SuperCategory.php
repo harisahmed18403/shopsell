@@ -2,18 +2,17 @@
 
 namespace App\Models;
 
-use App\Models\Traits\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SuperCategory extends Model
 {
-    use HasFactory, BelongsToOrganization;
+    use HasFactory;
 
     public $incrementing = false;
 
-    protected $fillable = ['id', 'name', 'organization_id'];
+    protected $fillable = ['id', 'name'];
 
     public function productLines(): HasMany
     {

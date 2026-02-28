@@ -30,6 +30,7 @@
                     <tr class="bg-base-200">
                         <th>Date</th>
                         <th>Type</th>
+                        <th>Products</th>
                         <th>Customer</th>
                         <th>Total</th>
                         <th>Status</th>
@@ -44,6 +45,11 @@
                                 <span class="badge badge-outline badge-xs {{ $transaction->type == 'sell' ? 'border-primary text-primary' : ($transaction->type == 'buy' ? 'border-secondary text-secondary' : 'border-accent text-accent') }}">
                                     {{ ucfirst($transaction->type) }}
                                 </span>
+                            </td>
+                            <td class="text-[11px] max-w-[200px] truncate">
+                                @foreach($transaction->items as $item)
+                                    {{ $item->product?->name ?? $item->description }}{{ !$loop->last ? ', ' : '' }}
+                                @endforeach
                             </td>
                             <td class="text-[11px]">{{ $transaction->customer?->name ?? 'Guest' }}</td>
                             <td class="font-bold">£{{ number_format($transaction->total_amount, 2) }}</td>

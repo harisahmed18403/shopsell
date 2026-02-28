@@ -31,7 +31,6 @@
                         <th>Name</th>
                         <th>Category</th>
                         <th class="hidden md:table-cell">Color</th>
-                        <th class="text-center">Stock</th>
                         <th>Price</th>
                         <th>CeX Market</th>
                         <th class="text-right">Actions</th>
@@ -58,11 +57,6 @@
                             </td>
                             <td><span class="text-[11px]">{{ $product->category?->name }}</span></td>
                             <td class="hidden md:table-cell text-[11px]">{{ $product->color }}</td>
-                            <td class="text-center">
-                                <span class="badge {{ $product->quantity < 5 ? 'badge-error' : 'badge-ghost' }} badge-xs font-mono">
-                                    {{ $product->quantity }}
-                                </span>
-                            </td>
                             <td class="font-bold">£{{ number_format($product->sale_price, 2) }}</td>
                             <td>
                                 @if($product->cexProducts->isNotEmpty())

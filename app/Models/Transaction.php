@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Traits\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,13 +9,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Transaction extends Model
 {
-    use HasFactory, BelongsToOrganization;
+    use HasFactory;
 
     protected $fillable = [
         'type',
         'customer_id',
+        'customer_name',
+        'customer_email',
+        'customer_phone',
         'user_id',
-        'organization_id',
         'total_amount',
         'status',
     ];

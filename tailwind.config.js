@@ -17,26 +17,14 @@ export default {
         },
     },
 
-    plugins: [forms, require('daisyui')],
+    plugins: [forms({
+        strategy: 'class',
+    }), require('daisyui')],
 
     daisyui: {
         themes: [
-            {
-                shopsell: {
-                    "primary": "#1a73e8", // Google Blue
-                    "secondary": "#4285f4",
-                    "accent": "#34a853", // Google Green
-                    "neutral": "#3d4451",
-                    "base-100": "#ffffff",
-                    "info": "#2094f3",
-                    "success": "#009485",
-                    "warning": "#ff9900",
-                    "error": "#ff5724",
-                    "--rounded-box": "0.25rem", // Less rounding
-                    "--rounded-btn": "0.125rem",
-                    "--rounded-badge": "0.125rem",
-                },
-            },
+            "corporate",
+            "business",
             "light",
             "dark",
         ],

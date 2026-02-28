@@ -54,11 +54,6 @@
                     </div>
 
                     <div class="form-control mt-3">
-                        <label class="label p-1"><span class="label-text text-xs font-bold uppercase opacity-60">Initial Quantity</span></label>
-                        <input type="number" name="quantity" class="input input-bordered input-sm" value="{{ old('quantity', 0) }}" />
-                    </div>
-
-                    <div class="form-control mt-3">
                         <label class="label p-1"><span class="label-text text-xs font-bold uppercase opacity-60">Description</span></label>
                         <textarea name="description" class="textarea textarea-bordered textarea-sm h-20">{{ old('description') }}</textarea>
                     </div>

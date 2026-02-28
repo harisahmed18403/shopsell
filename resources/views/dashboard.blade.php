@@ -27,7 +27,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 gap-4">
         <!-- Recent Transactions -->
         <div class="card bg-base-100 shadow rounded-sm border border-base-300">
             <div class="card-body p-4">
@@ -40,6 +40,7 @@
                         <thead>
                             <tr class="bg-base-200">
                                 <th>Date</th>
+                                <th>Products</th>
                                 <th>Customer</th>
                                 <th>Amount</th>
                                 <th>Status</th>
@@ -49,41 +50,14 @@
                             @foreach($recentTransactions as $transaction)
                                 <tr class="hover">
                                     <td>{{ $transaction->created_at->format('d M, H:i') }}</td>
+                                    <td class="text-[11px] max-w-[200px] truncate">
+                                        @foreach($transaction->items as $item)
+                                            {{ $item->product?->name ?? $item->description }}{{ !$loop->last ? ', ' : '' }}
+                                        @endforeach
+                                    </td>
                                     <td>{{ $transaction->customer?->name ?? 'Guest' }}</td>
                                     <td class="font-bold">£{{ number_format($transaction->total_amount, 2) }}</td>
                                     <td><span class="badge badge-success badge-xs">{{ $transaction->status }}</span></td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Low Stock Alert -->
-        <div class="card bg-base-100 shadow rounded-sm border border-base-300">
-            <div class="card-body p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="font-bold text-sm uppercase tracking-wider text-error">Low Stock Alert</h2>
-                    <a href="{{ route('products.index') }}" class="btn btn-ghost btn-xs underline">Inventory</a>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="table table-xs w-full">
-                        <thead>
-                            <tr class="bg-base-200">
-                                <th>Product</th>
-                                <th>Qty</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($lowStockProducts as $product)
-                                <tr class="hover">
-                                    <td class="max-w-[150px] truncate">{{ $product->name }}</td>
-                                    <td><span class="text-error font-bold">{{ $product->quantity }}</span></td>
-                                    <td>
-                                        <a href="{{ route('products.edit', $product) }}" class="btn btn-ghost btn-xs text-primary underline p-0 h-auto min-h-0">Restock</a>
-                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

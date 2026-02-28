@@ -28,10 +28,6 @@
                                     <label class="text-[10px] opacity-60 uppercase font-bold block">Color</label>
                                     <div class="text-sm">{{ $product->color }}</div>
                                 </div>
-                                <div>
-                                    <label class="text-[10px] opacity-60 uppercase font-bold block">Stock</label>
-                                    <div><span class="badge {{ $product->quantity < 5 ? 'badge-error' : 'badge-success' }} badge-xs">{{ $product->quantity }}</span></div>
-                                </div>
                             </div>
                             <div class="mt-4">
                                 <label class="text-[10px] opacity-60 uppercase font-bold block">Description</label>

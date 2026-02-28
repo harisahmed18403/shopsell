@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\Organization;
 use App\Models\SuperCategory;
 use App\Models\ProductLine;
 use App\Models\Category;
@@ -16,16 +15,17 @@ class ProductTest extends TestCase
     use RefreshDatabase;
 
     protected $user;
-    protected $organization;
     protected $category;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutMiddleware([
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        ]);
 
-        $this->organization = Organization::create(['name' => 'Test Org']);
         $this->user = User::factory()->create([
-            'organization_id' => $this->organization->id,
             'role' => 'admin',
         ]);
 
@@ -47,7 +47,6 @@ class ProductTest extends TestCase
             'name' => 'iPhone 13',
             'category_id' => $this->category->id,
             'sale_price' => 700,
-            'quantity' => 10,
         ];
 
         $response = $this->actingAs($this->user)->post(route('products.store'), $productData);
@@ -55,25 +54,7 @@ class ProductTest extends TestCase
         $response->assertRedirect(route('products.index'));
         $this->assertDatabaseHas('products', [
             'name' => 'iPhone 13',
-            'organization_id' => $this->organization->id,
         ]);
-    }
-
-    public function test_user_cannot_see_other_organization_products()
-    {
-        $otherOrg = Organization::create(['name' => 'Other Org']);
-        $otherProduct = Product::create([
-            'name' => 'Other Phone',
-            'category_id' => $this->category->id,
-            'organization_id' => $otherOrg->id,
-            'sale_price' => 500,
-            'quantity' => 5,
-        ]);
-
-        $response = $this->actingAs($this->user)->get(route('products.index'));
-
-        $response->assertStatus(200);
-        $response->assertDontSee('Other Phone');
     }
 
     public function test_product_filtering_works()
@@ -81,14 +62,12 @@ class ProductTest extends TestCase
         Product::create([
             'name' => 'Apple iPhone',
             'category_id' => $this->category->id,
-            'organization_id' => $this->organization->id,
             'sale_price' => 800,
         ]);
 
         Product::create([
             'name' => 'Samsung Galaxy',
             'category_id' => $this->category->id,
-            'organization_id' => $this->organization->id,
             'sale_price' => 700,
         ]);
 

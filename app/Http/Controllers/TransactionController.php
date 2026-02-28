@@ -15,7 +15,7 @@ class TransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Transaction::with(['customer', 'user', 'items']);
+        $query = Transaction::with(['customer', 'user', 'items.product']);
 
         if ($request->has('type')) {
             $query->where('type', $request->type);
@@ -47,6 +47,9 @@ class TransactionController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:buy,sell,repair',
             'customer_id' => 'nullable|exists:customers,id',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_email' => 'nullable|email|max:255',
+            'customer_phone' => 'nullable|string|max:20',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'nullable|exists:products,id',
             'items.*.description' => 'nullable|string',
@@ -65,6 +68,9 @@ class TransactionController extends Controller
             $transaction = Transaction::create([
                 'type' => $validated['type'],
                 'customer_id' => $validated['customer_id'] ?? null,
+                'customer_name' => $validated['customer_name'] ?? null,
+                'customer_email' => $validated['customer_email'] ?? null,
+                'customer_phone' => $validated['customer_phone'] ?? null,
                 'user_id' => Auth::id(),
                 'total_amount' => $totalAmount,
                 'status' => 'completed',
@@ -78,18 +84,6 @@ class TransactionController extends Controller
                     'quantity' => $itemData['quantity'],
                     'price' => $itemData['price'],
                 ]);
-
-                // Update Stock
-                if (isset($itemData['product_id'])) {
-                    $product = Product::find($itemData['product_id']);
-                    if ($product) {
-                        if ($validated['type'] === 'sell') {
-                            $product->decrement('quantity', $itemData['quantity']);
-                        } elseif ($validated['type'] === 'buy') {
-                            $product->increment('quantity', $itemData['quantity']);
-                        }
-                    }
-                }
             }
 
             DB::commit();
@@ -121,6 +115,9 @@ class TransactionController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:buy,sell,repair',
             'customer_id' => 'nullable|exists:customers,id',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_email' => 'nullable|email|max:255',
+            'customer_phone' => 'nullable|string|max:20',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'nullable|exists:products,id',
             'items.*.description' => 'nullable|string',
@@ -131,24 +128,10 @@ class TransactionController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Reverse Old Stock Changes
-            foreach ($transaction->items as $item) {
-                if ($item->product_id) {
-                    $product = Product::find($item->product_id);
-                    if ($product) {
-                        if ($transaction->type === 'sell') {
-                            $product->increment('quantity', $item->quantity);
-                        } elseif ($transaction->type === 'buy') {
-                            $product->decrement('quantity', $item->quantity);
-                        }
-                    }
-                }
-            }
-
-            // 2. Delete Old Items
+            // Delete Old Items
             $transaction->items()->delete();
 
-            // 3. Update Transaction and Create New Items
+            // Update Transaction and Create New Items
             $totalAmount = 0;
             foreach ($validated['items'] as $item) {
                 $totalAmount += $item['quantity'] * $item['price'];
@@ -157,6 +140,9 @@ class TransactionController extends Controller
             $transaction->update([
                 'type' => $validated['type'],
                 'customer_id' => $validated['customer_id'] ?? null,
+                'customer_name' => $validated['customer_name'] ?? null,
+                'customer_email' => $validated['customer_email'] ?? null,
+                'customer_phone' => $validated['customer_phone'] ?? null,
                 'total_amount' => $totalAmount,
             ]);
 
@@ -168,18 +154,6 @@ class TransactionController extends Controller
                     'quantity' => $itemData['quantity'],
                     'price' => $itemData['price'],
                 ]);
-
-                // 4. Apply New Stock Changes
-                if (isset($itemData['product_id'])) {
-                    $product = Product::find($itemData['product_id']);
-                    if ($product) {
-                        if ($validated['type'] === 'sell') {
-                            $product->decrement('quantity', $itemData['quantity']);
-                        } elseif ($validated['type'] === 'buy') {
-                            $product->increment('quantity', $itemData['quantity']);
-                        }
-                    }
-                }
             }
 
             DB::commit();
@@ -222,34 +196,15 @@ class TransactionController extends Controller
     public function destroy(Transaction $transaction)
     {
         try {
-            DB::beginTransaction();
-
-            // Reverse Stock Changes
-            foreach ($transaction->items as $item) {
-                if ($item->product_id) {
-                    $product = Product::find($item->product_id);
-                    if ($product) {
-                        if ($transaction->type === 'sell') {
-                            $product->increment('quantity', $item->quantity);
-                        } elseif ($transaction->type === 'buy') {
-                            $product->decrement('quantity', $item->quantity);
-                        }
-                    }
-                }
-            }
-
             $transaction->delete();
 
-            DB::commit();
-
             if (request()->wantsJson()) {
-                return response()->json(['message' => 'Transaction deleted and stock reversed.']);
+                return response()->json(['message' => 'Transaction deleted.']);
             }
 
-            return redirect()->route('transactions.index')->with('success', 'Transaction deleted and stock updated.');
+            return redirect()->route('transactions.index')->with('success', 'Transaction deleted successfully.');
 
         } catch (\Exception $e) {
-            DB::rollBack();
             if (request()->wantsJson()) {
                 return response()->json(['error' => $e->getMessage()], 500);
             }

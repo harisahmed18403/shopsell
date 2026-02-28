@@ -19,4 +19,28 @@
         min-height: 1.5rem;
         height: 1.5rem;
     }
+
+    /* Dark theme visibility fix for inputs/selects */
+    .input, .select {
+        @apply text-base-content bg-base-100 px-3 !important;
+        border: 1px solid #94a3b8 !important; /* slate-400 */
+    }
+    
+    .input:focus, .select:focus {
+        border-color: hsl(var(--p)) !important;
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+    }
+
+    /* Success button fix */
+    .btn-success {
+        background-color: #22c55e !important; /* green-500 */
+        border-color: #22c55e !important;
+        color: #ffffff !important;
+    }
+
+    .btn-success:hover {
+        background-color: #16a34a !important; /* green-600 */
+        border-color: #16a34a !important;
+    }
 }

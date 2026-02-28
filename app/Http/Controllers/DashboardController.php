@@ -29,12 +29,8 @@ class DashboardController extends Controller
             ->whereBetween('created_at', [$startOfMonth, Carbon::now()])
             ->sum('total_amount');
 
-        $recentTransactions = Transaction::with('customer')
+        $recentTransactions = Transaction::with(['customer', 'items.product'])
             ->latest()
-            ->take(5)
-            ->get();
-
-        $lowStockProducts = Product::where('quantity', '<', 5)
             ->take(5)
             ->get();
 
@@ -42,8 +38,7 @@ class DashboardController extends Controller
             'dailySales', 
             'weeklySales', 
             'monthlySales', 
-            'recentTransactions',
-            'lowStockProducts'
+            'recentTransactions'
         ));
     }
 

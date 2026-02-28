@@ -236,7 +236,6 @@ class CexService
                     'cash_price' => $cashPrice,
                     'voucher_price' => $voucherPrice,
                     'grade' => $grade,
-                    'quantity' => 0,
                 ]);
             }
         }

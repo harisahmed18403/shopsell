@@ -81,6 +81,8 @@
                                 Created: {{ $transaction->created_at->format('M d, Y') }}<br>
                                 @if($transaction->customer)
                                     Customer ID: {{ $transaction->customer->id }}
+                                @elseif($transaction->customer_name)
+                                    Customer: {{ $transaction->customer_name }}
                                 @endif
                             </td>
                         </tr>
@@ -100,8 +102,12 @@
                             <td>
                                 @if($transaction->customer)
                                     {{ $transaction->customer->name }}<br>
-                                    {{ $transaction->customer->email }}<br>
-                                    {{ $transaction->customer->phone }}
+                                    @if($transaction->customer->email) {{ $transaction->customer->email }}<br> @endif
+                                    @if($transaction->customer->phone) {{ $transaction->customer->phone }} @endif
+                                @elseif($transaction->customer_name)
+                                    {{ $transaction->customer_name }}<br>
+                                    @if($transaction->customer_email) {{ $transaction->customer_email }}<br> @endif
+                                    @if($transaction->customer_phone) {{ $transaction->customer_phone }} @endif
                                 @else
                                     Walk-in Customer
                                 @endif

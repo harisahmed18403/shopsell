@@ -140,7 +140,6 @@ class ProductController extends Controller
             'color' => 'nullable|string',
             'grade' => 'nullable|string',
             'description' => 'nullable|string',
-            'quantity' => 'integer|min:0',
         ]);
 
         $product = Product::create($validated);
@@ -169,10 +168,6 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        if (!$product->organization_id && !Auth::user()->isSuperAdmin()) {
-            abort(403, 'You cannot edit global products.');
-        }
-
         $categories = Category::all();
         return view('products.edit', compact('product', 'categories'));
     }
@@ -182,10 +177,6 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        if (!$product->organization_id && !Auth::user()->isSuperAdmin()) {
-            abort(403, 'You cannot edit global products.');
-        }
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -195,7 +186,6 @@ class ProductController extends Controller
             'color' => 'nullable|string',
             'grade' => 'nullable|string',
             'description' => 'nullable|string',
-            'quantity' => 'integer|min:0',
         ]);
 
         $product->update($validated);
@@ -212,10 +202,6 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-         if (!$product->organization_id && !Auth::user()->isSuperAdmin()) {
-            abort(403, 'You cannot delete global products.');
-        }
-        
         $product->delete();
 
         if (request()->wantsJson()) {

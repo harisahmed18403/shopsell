@@ -87,7 +87,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div class="form-control w-full">
                                 <label class="label p-1"><span class="label-text text-xs">Type</span></label>
-                                <select name="type" class="select select-bordered select-sm w-full" required x-model="type">
+                                <select name="type" class="select select-bordered w-full" required x-model="type">
                                     <option value="sell">Sell</option>
                                     <option value="buy">Buy</option>
                                     <option value="repair">Repair</option>
@@ -96,7 +96,7 @@
 
                             <div class="form-control w-full">
                                 <label class="label p-1"><span class="label-text text-xs">Customer</span></label>
-                                <select name="customer_id" class="select select-bordered select-sm w-full">
+                                <select name="customer_id" class="select select-bordered w-full">
                                     <option value="">Walk-in Customer</option>
                                     @foreach($customers as $customer)
                                         <option value="{{ $customer->id }}" {{ $transaction->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
@@ -115,7 +115,7 @@
                             <span class="text-sm font-semibold opacity-70">Total Amount:</span>
                             <span class="text-2xl font-bold text-primary">£<span x-text="calculateTotal()"></span></span>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm w-full">Update Transaction</button>
+                        <button type="submit" class="btn btn-success text-white w-full">Update Transaction</button>
                     </div>
                 </div>
             </div>
@@ -125,11 +125,11 @@
                 <div class="card-body p-4">
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h3 class="font-bold text-xs uppercase opacity-60">Items</h3>
-                        <button type="button" @click="addItem()" class="btn btn-xs btn-outline btn-primary">Add Item</button>
+                        <button type="button" @click="addItem()" class="btn btn-sm btn-outline btn-primary">Add Item</button>
                     </div>
 
                     <div class="overflow-x-visible overflow-y-visible">
-                        <table class="table table-xs w-full overflow-visible">
+                        <table class="table w-full overflow-visible">
                             <thead>
                                 <tr class="bg-base-200">
                                     <th class="w-1/2">Product/Description</th>
@@ -150,7 +150,7 @@
                                                 <div class="relative">
                                                     <input 
                                                         type="text" 
-                                                        class="input input-bordered input-xs w-full" 
+                                                        class="input input-bordered w-full" 
                                                         placeholder="Search product..." 
                                                         x-model="item.search"
                                                         @input.debounce.300ms="searchProduct(index)"
@@ -190,16 +190,16 @@
                                                     </template>
                                                 </div>
 
-                                                <input type="text" :name="'items['+index+'][description]'" class="input input-bordered input-xs w-full" placeholder="Custom description/Repair details" x-model="item.description">
+                                                <input type="text" :name="'items['+index+'][description]'" class="input input-bordered w-full" placeholder="Custom description/Repair details" x-model="item.description">
                                             </div>
                                         </td>
-                                        <td class="text-center py-1 align-top">
-                                            <input type="number" :name="'items['+index+'][quantity]'" class="input input-bordered input-xs w-16 text-center mt-1" x-model.number="item.quantity" min="1" required>
+                                        <td class="text-center py-2 align-top">
+                                            <input type="number" :name="'items['+index+'][quantity]'" class="input input-bordered w-24 text-center mt-1" x-model.number="item.quantity" min="1" required>
                                         </td>
-                                        <td class="py-1 align-top">
+                                        <td class="py-2 align-top">
                                             <div class="relative mt-1">
-                                                <span class="absolute left-2 top-1 text-[10px] opacity-50">£</span>
-                                                <input type="number" step="0.01" :name="'items['+index+'][price]'" class="input input-bordered input-xs w-full pl-5" x-model.number="item.price" min="0" required>
+                                                <span class="absolute left-3 top-3 text-sm opacity-50">£</span>
+                                                <input type="number" step="0.01" :name="'items['+index+'][price]'" class="input input-bordered w-full pl-7" x-model.number="item.price" min="0" required>
                                             </div>
                                         </td>
                                         <td class="font-bold py-1 align-top">

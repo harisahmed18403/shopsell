@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Organization;
 use App\Models\SuperCategory;
 use App\Models\ProductLine;
 use App\Models\Category;
@@ -18,53 +17,54 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Create Super Admin (No Org)
+        // 1. Create Super Admin
         User::create([
             'name' => 'Super Admin',
-            'email' => 'admin@saas.com',
+            'email' => 'admin@shopsell.com',
             'password' => Hash::make('password'),
             'role' => 'super_admin',
-            'organization_id' => null,
             'email_verified_at' => now(),
         ]);
 
-        // 2. Create Organization
-        $org = Organization::create([
-            'name' => 'Phone Shop A',
-            'details' => 'Best phones in town',
-        ]);
-
-        // 3. Create Org Admin
+        // 2. Create Regular Admin
         User::create([
-            'name' => 'Shop Owner',
-            'email' => 'owner@shopa.com',
+            'name' => 'Shop Manager',
+            'email' => 'manager@shopsell.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
-            'organization_id' => $org->id,
             'email_verified_at' => now(),
         ]);
 
-        // 4. Create Product Structure (Global for now, org_id = null)
-        $super = SuperCategory::create(['name' => 'Apple Tech']);
-        $line = ProductLine::create(['name' => 'iPhones', 'super_category_id' => $super->id]);
-        $cat = Category::create(['name' => 'iPhone 11', 'product_line_id' => $line->id]);
+        // 3. Create Product Structure
+        $super = SuperCategory::create(['id' => 1, 'name' => 'Apple Tech']);
+        $line = ProductLine::create(['id' => 1, 'name' => 'iPhones', 'super_category_id' => $super->id]);
+        $cat = Category::create(['id' => 1, 'name' => 'iPhone 11', 'product_line_id' => $line->id]);
 
-        $super2 = SuperCategory::create(['name' => 'Samsung Tech']);
-        $line2 = ProductLine::create(['name' => 'Galaxy S Series', 'super_category_id' => $super2->id]);
-        $cat2 = Category::create(['name' => 'Galaxy S20', 'product_line_id' => $line2->id]);
+        $super2 = SuperCategory::create(['id' => 2, 'name' => 'Samsung Tech']);
+        $line2 = ProductLine::create(['id' => 2, 'name' => 'Galaxy S Series', 'super_category_id' => $super2->id]);
+        $cat2 = Category::create(['id' => 2, 'name' => 'Galaxy S20', 'product_line_id' => $line2->id]);
 
-        // 5. Create a Product for Org A
+        // 4. Create Products
         Product::create([
             'name' => 'iPhone 11 256GB Black',
             'category_id' => $cat->id,
-            'organization_id' => $org->id, // Explicitly set, or login as user to use trait. Here explicit.
             'sale_price' => 400.00,
             'cash_price' => 350.00,
             'voucher_price' => 380.00,
             'color' => 'Black',
             'grade' => 'A',
             'description' => 'Mint condition',
-            'quantity' => 5,
+        ]);
+
+        Product::create([
+            'name' => 'Galaxy S20 128GB Grey',
+            'category_id' => $cat2->id,
+            'sale_price' => 300.00,
+            'cash_price' => 250.00,
+            'voucher_price' => 280.00,
+            'color' => 'Grey',
+            'grade' => 'B',
+            'description' => 'Few scratches',
         ]);
     }
 }
