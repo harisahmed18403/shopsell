@@ -10,6 +10,16 @@
     body {
         @apply bg-slate-950 text-slate-100;
     }
+
+    select {
+        color-scheme: dark;
+    }
+
+    select,
+    option,
+    optgroup {
+        @apply bg-slate-900 text-slate-100;
+    }
 }
 
 @layer components {
