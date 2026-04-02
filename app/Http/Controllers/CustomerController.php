@@ -4,24 +4,44 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CustomerController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): Response
     {
         $customers = Customer::latest()->paginate(10);
-        return view('customers.index', compact('customers'));
+
+        return Inertia::render('Customers/Index', [
+            'customers' => $customers->through(fn (Customer $customer) => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'phone' => $customer->phone,
+                'address' => $customer->address,
+                'created_at' => $customer->created_at?->toIso8601String(),
+            ])->items(),
+            'pagination' => [
+                'total' => $customers->total(),
+                'links' => collect($customers->linkCollection())->map(fn ($link) => [
+                    'url' => $link['url'],
+                    'label' => strip_tags($link['label']),
+                    'active' => $link['active'],
+                ])->values(),
+            ],
+        ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): Response
     {
-        return view('customers.create');
+        return Inertia::render('Customers/Create');
     }
 
     /**
@@ -44,18 +64,42 @@ class CustomerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Customer $customer)
+    public function show(Customer $customer): Response
     {
-        $customer->load('transactions');
-        return view('customers.show', compact('customer'));
+        $customer->load('transactions.items.product');
+
+        return Inertia::render('Customers/Show', [
+            'customer' => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'phone' => $customer->phone,
+                'address' => $customer->address,
+                'transactions' => $customer->transactions->map(fn ($transaction) => [
+                    'id' => $transaction->id,
+                    'type' => $transaction->type,
+                    'status' => $transaction->status,
+                    'total_amount' => (float) $transaction->total_amount,
+                    'created_at' => $transaction->created_at?->toIso8601String(),
+                ])->values(),
+            ],
+        ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Customer $customer)
+    public function edit(Customer $customer): Response
     {
-        return view('customers.edit', compact('customer'));
+        return Inertia::render('Customers/Edit', [
+            'customer' => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'phone' => $customer->phone,
+                'address' => $customer->address,
+            ],
+        ]);
     }
 
     /**
@@ -81,6 +125,7 @@ class CustomerController extends Controller
     public function destroy(Customer $customer)
     {
         $customer->delete();
+
         return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
     }
 }

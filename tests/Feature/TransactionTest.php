@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Product;
 use App\Models\Category;
-use App\Models\SuperCategory;
+use App\Models\Customer;
+use App\Models\Product;
 use App\Models\ProductLine;
+use App\Models\SuperCategory;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class TransactionTest extends TestCase
@@ -15,7 +17,10 @@ class TransactionTest extends TestCase
     use RefreshDatabase;
 
     protected $user;
+
     protected $product;
+
+    protected $customer;
 
     protected function setUp(): void
     {
@@ -38,6 +43,31 @@ class TransactionTest extends TestCase
             'category_id' => $category->id,
             'sale_price' => 700,
         ]);
+
+        $this->customer = Customer::create([
+            'name' => 'Existing Customer',
+            'email' => 'existing@example.com',
+            'phone' => '07000000000',
+        ]);
+    }
+
+    public function test_user_can_view_transaction_index_page()
+    {
+        $this->actingAs($this->user)
+            ->get(route('transactions.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Transactions/Index'));
+    }
+
+    public function test_user_can_view_transaction_create_page()
+    {
+        $this->actingAs($this->user)
+            ->get(route('transactions.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Transactions/Create')
+                ->has('customers')
+            );
     }
 
     public function test_user_can_create_transaction_with_manual_customer_details()
@@ -52,7 +82,7 @@ class TransactionTest extends TestCase
                     'product_id' => $this->product->id,
                     'quantity' => 1,
                     'price' => 700,
-                ]
+                ],
             ],
         ];
 
@@ -78,7 +108,7 @@ class TransactionTest extends TestCase
                     'description' => 'Screen Replacement',
                     'quantity' => 1,
                     'price' => 100,
-                ]
+                ],
             ],
         ];
 
@@ -90,5 +120,38 @@ class TransactionTest extends TestCase
             'total_amount' => 100,
             'customer_name' => null,
         ]);
+    }
+
+    public function test_user_can_view_transaction_show_and_edit_pages()
+    {
+        $this->actingAs($this->user)->post(route('transactions.store'), [
+            'type' => 'sell',
+            'customer_id' => $this->customer->id,
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 1,
+                    'price' => 700,
+                ],
+            ],
+        ]);
+
+        $transaction = \App\Models\Transaction::firstOrFail();
+
+        $this->actingAs($this->user)
+            ->get(route('transactions.show', $transaction))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Transactions/Show')
+                ->where('transaction.id', $transaction->id)
+            );
+
+        $this->actingAs($this->user)
+            ->get(route('transactions.edit', $transaction))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Transactions/Edit')
+                ->where('transaction.id', $transaction->id)
+            );
     }
 }

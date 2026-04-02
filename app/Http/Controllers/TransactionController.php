@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
-use App\Models\Product;
-use App\Models\Customer;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\Http\JsonResponse|Response
     {
         $query = Transaction::with(['customer', 'user', 'items.product']);
 
-        if ($request->has('type')) {
+        if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
 
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
@@ -30,16 +31,42 @@ class TransactionController extends Controller
         if (request()->wantsJson()) {
             return response()->json($transactions);
         }
-        return view('transactions.index', compact('transactions'));
+
+        return Inertia::render('Transactions/Index', [
+            'filters' => [
+                'type' => $request->string('type')->toString(),
+                'status' => $request->string('status')->toString(),
+            ],
+            'transactions' => $transactions->through(fn (Transaction $transaction) => [
+                'id' => $transaction->id,
+                'type' => $transaction->type,
+                'status' => $transaction->status,
+                'created_at' => $transaction->created_at?->toIso8601String(),
+                'customer_name' => $transaction->customer?->name ?? $transaction->customer_name ?? 'Guest',
+                'total_amount' => (float) $transaction->total_amount,
+                'items' => $transaction->items->map(fn ($item) => $item->product?->name ?? $item->description)->filter()->values(),
+            ])->items(),
+            'pagination' => [
+                'total' => $transactions->total(),
+                'links' => collect($transactions->linkCollection())->map(fn ($link) => [
+                    'url' => $link['url'],
+                    'label' => strip_tags($link['label']),
+                    'active' => $link['active'],
+                ])->values(),
+            ],
+        ]);
     }
 
-    public function create()
+    public function create(): \Illuminate\Http\JsonResponse|Response
     {
-        $customers = Customer::all();
+        $customers = Customer::query()->orderBy('name')->get(['id', 'name', 'email', 'phone']);
         if (request()->wantsJson()) {
             return response()->json(['customers' => $customers]);
         }
-        return view('transactions.create', compact('customers'));
+
+        return Inertia::render('Transactions/Create', [
+            'customers' => $customers,
+        ]);
     }
 
     public function store(Request $request)
@@ -87,7 +114,7 @@ class TransactionController extends Controller
             }
 
             DB::commit();
-            
+
             if (request()->wantsJson()) {
                 return response()->json($transaction->load('items'), 201);
             }
@@ -99,15 +126,20 @@ class TransactionController extends Controller
             if (request()->wantsJson()) {
                 return response()->json(['error' => $e->getMessage()], 500);
             }
-            return back()->with('error', 'Error processing transaction: ' . $e->getMessage());
+
+            return back()->with('error', 'Error processing transaction: '.$e->getMessage());
         }
     }
 
-    public function edit(Transaction $transaction)
+    public function edit(Transaction $transaction): Response
     {
-        $transaction->load('items');
-        $customers = Customer::all();
-        return view('transactions.edit', compact('transaction', 'customers'));
+        $transaction->load(['items.product', 'customer']);
+        $customers = Customer::query()->orderBy('name')->get(['id', 'name', 'email', 'phone']);
+
+        return Inertia::render('Transactions/Edit', [
+            'customers' => $customers,
+            'transaction' => $this->serializeTransaction($transaction),
+        ]);
     }
 
     public function update(Request $request, Transaction $transaction)
@@ -157,28 +189,32 @@ class TransactionController extends Controller
             }
 
             DB::commit();
-            
+
             return redirect()->route('transactions.index')->with('success', 'Transaction updated successfully.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Error updating transaction: ' . $e->getMessage());
+
+            return back()->with('error', 'Error updating transaction: '.$e->getMessage());
         }
     }
 
-    public function show(Transaction $transaction)
+    public function show(Transaction $transaction): \Illuminate\Http\JsonResponse|Response
     {
         $transaction->load(['items.product', 'customer', 'user']);
         if (request()->wantsJson()) {
             return response()->json($transaction);
         }
-        return view('transactions.show', compact('transaction'));
+
+        return Inertia::render('Transactions/Show', [
+            'transaction' => $this->serializeTransaction($transaction, true),
+        ]);
     }
 
     public function downloadInvoice(Transaction $transaction)
     {
         $transaction->load(['items.product', 'customer', 'user']);
-        
+
         $data = [
             'transaction' => $transaction,
             'business' => [
@@ -186,11 +222,12 @@ class TransactionController extends Controller
                 'address' => env('BUSINESS_ADDRESS', '123 Street, City, Postcode'),
                 'phone' => env('BUSINESS_PHONE', '0123456789'),
                 'email' => env('BUSINESS_EMAIL', 'contact@shopsell.com'),
-            ]
+            ],
         ];
 
         $pdf = Pdf::loadView('transactions.invoice', $data);
-        return $pdf->download('invoice-' . $transaction->id . '.pdf');
+
+        return $pdf->download('invoice-'.$transaction->id.'.pdf');
     }
 
     public function destroy(Transaction $transaction)
@@ -208,10 +245,32 @@ class TransactionController extends Controller
             if (request()->wantsJson()) {
                 return response()->json(['error' => $e->getMessage()], 500);
             }
-            return back()->with('error', 'Error deleting transaction: ' . $e->getMessage());
+
+            return back()->with('error', 'Error deleting transaction: '.$e->getMessage());
         }
     }
 
-    // Edit/Update is complex for transactions (stock revert?), skipping for brevity unless requested.
-    // Usually transactions are immutable or strictly controlled.
+    protected function serializeTransaction(Transaction $transaction, bool $includeMeta = false): array
+    {
+        return [
+            'id' => $transaction->id,
+            'type' => $transaction->type,
+            'status' => $transaction->status,
+            'customer_id' => $transaction->customer_id,
+            'customer_name' => $transaction->customer?->name ?? $transaction->customer_name,
+            'customer_email' => $transaction->customer?->email ?? $transaction->customer_email,
+            'customer_phone' => $transaction->customer?->phone ?? $transaction->customer_phone,
+            'total_amount' => (float) $transaction->total_amount,
+            'created_at' => $transaction->created_at?->toIso8601String(),
+            'user_name' => $includeMeta ? $transaction->user?->name : null,
+            'items' => $transaction->items->map(fn (TransactionItem $item) => [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product?->name,
+                'description' => $item->description,
+                'quantity' => $item->quantity,
+                'price' => (float) $item->price,
+            ])->values(),
+        ];
+    }
 }
