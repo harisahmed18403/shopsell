@@ -22,13 +22,13 @@ jobs:
       - name: Assert deploy key secret exists
         shell: bash
         run: |
-          test -n "${{ secrets.VPS_DEPLOY_KEY }}" || { echo "VPS_DEPLOY_KEY is missing"; exit 1; }
+          test -n "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" || { echo "DEPLOY_SSH_PRIVATE_KEY is missing"; exit 1; }
 
       - name: Write deploy key
         shell: bash
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_DEPLOY_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
       - name: Validate deploy key format
