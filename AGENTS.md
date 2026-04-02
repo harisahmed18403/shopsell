@@ -31,6 +31,8 @@ Recent history uses short, imperative subjects with a prefix, usually `feat:` or
 - Public URL context: Apache serves the app at `https://phoneworkslancaster.com/admin` via an alias to `/var/www/shopsell/public`.
 - Server-side deploy entrypoint: `/usr/local/bin/shopsell-deploy`, which runs `/var/www/shopsell/scripts/deploy.sh`.
 - SSH restriction: the GitHub Actions deploy key in `/root/.ssh/github_actions_shopsell_deploy` is forced in `authorized_keys` to run only `/usr/local/bin/shopsell-deploy`.
+- Workflow connection settings are hardcoded in `.github/workflows/deploy.yml`: host `159.223.245.73`, port `22`, user `root`.
 - Deploy script behavior: `git fetch`, `git reset --hard origin/main`, `composer install --no-dev`, `npm ci`, `npm run build`, `php artisan migrate --force`, clear/rebuild Laravel caches, `php artisan queue:restart`, then fix ownership for `storage`, `bootstrap/cache`, and `database`.
-- Required GitHub Actions secrets: `VPS_HOST`, `VPS_PORT`, `VPS_USER`, `VPS_DEPLOY_KEY`.
+- Required GitHub Actions secret: `DEPLOY_SSH_PRIVATE_KEY`.
+- `DEPLOY_SSH_PRIVATE_KEY` must contain the full private key from `/root/.ssh/github_actions_shopsell_deploy`, not the `.pub` key.
 - Operational constraint: deployment is in-place and destructive to manual server edits because it hard-resets the VPS checkout to `origin/main`.
