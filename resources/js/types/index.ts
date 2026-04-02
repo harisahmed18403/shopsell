@@ -25,5 +25,5 @@ export interface SharedPageProps {
         current: string | null;
         previous: string | null;
     };
-    errors: Record<string, string>;
+    errors: Record<string, string | Record<string, string>>;
 }
