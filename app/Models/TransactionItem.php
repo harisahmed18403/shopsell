@@ -13,6 +13,13 @@ class TransactionItem extends Model
     protected $fillable = [
         'transaction_id',
         'product_id',
+        'brand',
+        'model',
+        'storage',
+        'color',
+        'imei_1',
+        'imei_2',
+        'condition_grade',
         'description',
         'quantity',
         'price',

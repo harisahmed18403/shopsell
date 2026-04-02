@@ -22,6 +22,18 @@
                                     <option value="repair">Repair</option>
                                 </select>
                             </FormField>
+                            <FormField id="payment_method" label="Payment method" :error="errors.payment_method as string">
+                                <select id="payment_method" v-model="form.payment_method" class="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white">
+                                    <option value="Cash">Cash</option>
+                                    <option value="Card">Card</option>
+                                    <option value="Bank Transfer">Bank transfer</option>
+                                    <option value="Voucher">Voucher</option>
+                                    <option value="Mixed">Mixed</option>
+                                </select>
+                            </FormField>
+                            <FormField id="amount_paid" label="Amount paid" :error="errors.amount_paid as string">
+                                <Input id="amount_paid" v-model="form.amount_paid" type="number" step="0.01" min="0" />
+                            </FormField>
                         </CardContent>
                     </Card>
 
@@ -53,6 +65,16 @@
                         <CardContent class="space-y-4 pt-6">
                             <p class="text-sm uppercase tracking-[0.25em] text-slate-500">Summary</p>
                             <p class="font-display text-4xl font-semibold text-white">{{ formatCurrency(total) }}</p>
+                            <div class="rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-300">
+                                <div class="flex items-center justify-between gap-4">
+                                    <span>Amount paid</span>
+                                    <span>{{ formatCurrency(amountPaid) }}</span>
+                                </div>
+                                <div class="mt-2 flex items-center justify-between gap-4">
+                                    <span>Balance</span>
+                                    <span>{{ formatCurrency(balance) }}</span>
+                                </div>
+                            </div>
                             <Button type="submit" :disabled="form.processing" class="w-full">
                                 {{ mode === 'create' ? 'Complete transaction' : 'Update transaction' }}
                             </Button>
@@ -111,6 +133,29 @@
                                         <Button v-if="form.items.length > 1" type="button" variant="ghost" size="sm" @click="removeItem(index)">Remove</Button>
                                     </div>
                                 </div>
+                                <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                    <FormField :label="`Brand ${index + 1}`" :error="errors[`items.${index}.brand`] as string">
+                                        <Input v-model="item.brand" type="text" placeholder="Apple" />
+                                    </FormField>
+                                    <FormField :label="`Model ${index + 1}`" :error="errors[`items.${index}.model`] as string">
+                                        <Input v-model="item.model" type="text" placeholder="iPhone 16 Pro Max" />
+                                    </FormField>
+                                    <FormField :label="`Storage ${index + 1}`" :error="errors[`items.${index}.storage`] as string">
+                                        <Input v-model="item.storage" type="text" placeholder="256 GB" />
+                                    </FormField>
+                                    <FormField :label="`Colour ${index + 1}`" :error="errors[`items.${index}.color`] as string">
+                                        <Input v-model="item.color" type="text" placeholder="Black Titanium" />
+                                    </FormField>
+                                    <FormField :label="`IMEI 1 ${index + 1}`" :error="errors[`items.${index}.imei_1`] as string">
+                                        <Input v-model="item.imei_1" type="text" />
+                                    </FormField>
+                                    <FormField :label="`IMEI 2 ${index + 1}`" :error="errors[`items.${index}.imei_2`] as string">
+                                        <Input v-model="item.imei_2" type="text" />
+                                    </FormField>
+                                    <FormField :label="`Condition ${index + 1}`" :error="errors[`items.${index}.condition_grade`] as string">
+                                        <Input v-model="item.condition_grade" type="text" placeholder="A" />
+                                    </FormField>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -141,6 +186,13 @@ interface SearchResult {
 type ItemState = {
     product_id: string;
     description: string;
+    brand: string;
+    model: string;
+    storage: string;
+    color: string;
+    imei_1: string;
+    imei_2: string;
+    condition_grade: string;
     quantity: number | string;
     price: number | string;
     search: string;
@@ -160,15 +212,67 @@ const props = defineProps<SharedPageProps & {
         customer_name: string | null;
         customer_email: string | null;
         customer_phone: string | null;
-        items: Array<{ product_id: number | null; product_name: string | null; description: string | null; quantity: number; price: number }>;
+        amount_paid: number;
+        balance_amount: number;
+        payment_method: string | null;
+        items: Array<{
+            product_id: number | null;
+            product_name: string | null;
+            description: string | null;
+            brand: string | null;
+            model: string | null;
+            storage: string | null;
+            color: string | null;
+            imei_1: string | null;
+            imei_2: string | null;
+            condition_grade: string | null;
+            quantity: number;
+            price: number;
+        }>;
     };
     mode: 'create' | 'edit';
 }>();
 
-function makeItem(item?: { product_id: number | null; product_name: string | null; description: string | null; quantity: number; price: number }): ItemState {
+function splitProductName(name: string | null | undefined): { brand: string; model: string } {
+    const normalized = name?.trim() ?? '';
+    if (!normalized) {
+        return { brand: '', model: '' };
+    }
+
+    const [brand = '', ...modelParts] = normalized.split(/\s+/);
+
+    return {
+        brand,
+        model: modelParts.join(' '),
+    };
+}
+
+function makeItem(item?: {
+    product_id: number | null;
+    product_name: string | null;
+    description: string | null;
+    brand: string | null;
+    model: string | null;
+    storage: string | null;
+    color: string | null;
+    imei_1: string | null;
+    imei_2: string | null;
+    condition_grade: string | null;
+    quantity: number;
+    price: number;
+}): ItemState {
+    const parsedName = splitProductName(item?.product_name);
+
     return {
         product_id: item?.product_id ? String(item.product_id) : '',
         description: item?.description ?? item?.product_name ?? '',
+        brand: item?.brand ?? parsedName.brand,
+        model: item?.model ?? parsedName.model,
+        storage: item?.storage ?? '',
+        color: item?.color ?? '',
+        imei_1: item?.imei_1 ?? '',
+        imei_2: item?.imei_2 ?? '',
+        condition_grade: item?.condition_grade ?? '',
         quantity: item?.quantity ?? 1,
         price: item?.price ?? 0,
         search: item?.product_name ?? item?.description ?? '',
@@ -184,10 +288,14 @@ const form = useForm({
     customer_name: props.transaction?.customer_name ?? '',
     customer_email: props.transaction?.customer_email ?? '',
     customer_phone: props.transaction?.customer_phone ?? '',
+    amount_paid: props.transaction?.amount_paid ?? '',
+    payment_method: props.transaction?.payment_method ?? 'Cash',
     items: props.transaction?.items?.length ? props.transaction.items.map((item) => makeItem(item)) : [makeItem()],
 });
 
 const total = computed(() => form.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.price || 0), 0));
+const amountPaid = computed(() => form.amount_paid === '' ? total.value : Number(form.amount_paid || 0));
+const balance = computed(() => Math.max(0, total.value - amountPaid.value));
 
 function addItem() {
     form.items.push(makeItem());
@@ -235,18 +343,33 @@ function debouncedSearch(index: number) {
 
 function selectProduct(index: number, result: SearchResult) {
     const item = form.items[index];
+    const parsedName = splitProductName(result.name);
     item.product_id = String(result.id);
     item.search = result.name;
     item.description = result.name;
+    if (!item.brand) {
+        item.brand = parsedName.brand;
+    }
+    if (!item.model) {
+        item.model = parsedName.model;
+    }
     item.showResults = false;
 }
 
 function submit() {
     const payload = {
         ...form.data(),
+        amount_paid: form.amount_paid === '' ? null : Number(form.amount_paid),
         items: form.items.map((item) => ({
             product_id: item.product_id || null,
             description: item.description || null,
+            brand: item.brand || null,
+            model: item.model || null,
+            storage: item.storage || null,
+            color: item.color || null,
+            imei_1: item.imei_1 || null,
+            imei_2: item.imei_2 || null,
+            condition_grade: item.condition_grade || null,
             quantity: Number(item.quantity),
             price: Number(item.price),
         })),

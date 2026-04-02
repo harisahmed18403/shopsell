@@ -12,6 +12,7 @@ class Transaction extends Model
     use HasFactory;
 
     protected $fillable = [
+        'receipt_number',
         'type',
         'customer_id',
         'customer_name',
@@ -19,6 +20,8 @@ class Transaction extends Model
         'customer_phone',
         'user_id',
         'total_amount',
+        'amount_paid',
+        'payment_method',
         'status',
     ];
 

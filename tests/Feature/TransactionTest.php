@@ -88,11 +88,20 @@ class TransactionTest extends TestCase
             'customer_name' => 'John Doe',
             'customer_email' => 'john@example.com',
             'customer_phone' => '07712345678',
+            'payment_method' => 'Cash',
+            'amount_paid' => 850,
             'items' => [
                 [
                     'product_id' => $this->product->id,
+                    'brand' => 'Apple',
+                    'model' => 'iPhone 16 Pro Max',
+                    'storage' => '256 GB',
+                    'color' => 'Black Titanium',
+                    'imei_1' => '354760243811073',
+                    'imei_2' => '354760243542140',
+                    'condition_grade' => 'A',
                     'quantity' => 1,
-                    'price' => 700,
+                    'price' => 850,
                 ],
             ],
         ];
@@ -106,7 +115,19 @@ class TransactionTest extends TestCase
             'customer_name' => 'John Doe',
             'customer_email' => 'john@example.com',
             'customer_phone' => '07712345678',
-            'total_amount' => 700,
+            'payment_method' => 'Cash',
+            'amount_paid' => 850,
+            'total_amount' => 850,
+        ]);
+        $this->assertDatabaseHas('transaction_items', [
+            'brand' => 'Apple',
+            'model' => 'iPhone 16 Pro Max',
+            'storage' => '256 GB',
+            'color' => 'Black Titanium',
+            'imei_1' => '354760243811073',
+            'imei_2' => '354760243542140',
+            'condition_grade' => 'A',
+            'price' => 850,
         ]);
     }
 
@@ -129,6 +150,7 @@ class TransactionTest extends TestCase
         $this->assertDatabaseHas('transactions', [
             'type' => 'repair',
             'total_amount' => 100,
+            'amount_paid' => 100,
             'customer_name' => null,
         ]);
     }
@@ -155,6 +177,7 @@ class TransactionTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Transactions/Show')
                 ->where('transaction.id', $transaction->id)
+                ->where('transaction.receipt_number', $transaction->receipt_number)
             );
 
         $this->actingAs($this->user)
@@ -164,6 +187,38 @@ class TransactionTest extends TestCase
                 ->component('Transactions/Edit')
                 ->where('transaction.id', $transaction->id)
             );
+    }
+
+    public function test_invoice_download_includes_receipt_headers()
+    {
+        $this->actingAs($this->user)->post(route('transactions.store'), [
+            'type' => 'sell',
+            'customer_name' => 'Rana Ahsan Ali',
+            'payment_method' => 'Cash',
+            'amount_paid' => 850,
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'brand' => 'Apple',
+                    'model' => 'iPhone 16 Pro Max',
+                    'storage' => '256 GB',
+                    'color' => 'Black Titanium',
+                    'imei_1' => '354760243811073',
+                    'imei_2' => '354760243542140',
+                    'condition_grade' => 'A',
+                    'quantity' => 1,
+                    'price' => 850,
+                ],
+            ],
+        ]);
+
+        $transaction = \App\Models\Transaction::with('items')->firstOrFail();
+
+        $response = $this->actingAs($this->user)->get(route('transactions.invoice', $transaction));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $response->assertHeader('content-disposition');
     }
 
     public function test_user_can_delete_transaction()

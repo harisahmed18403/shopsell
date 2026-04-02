@@ -1,144 +1,244 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Invoice #{{ $transaction->id }}</title>
+    <meta charset="UTF-8">
+    <title>Receipt {{ $transaction->receipt_number ?: $transaction->id }}</title>
     <style>
         body {
-            font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-            color: #333;
+            font-family: DejaVu Sans, sans-serif;
+            color: #0f172a;
             font-size: 12px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 24px;
+            background: #f8fafc;
         }
-        .invoice-box {
-            max-width: 800px;
-            margin: auto;
-            padding: 30px;
-            border: 1px solid #eee;
-            box-shadow: 0 0 10px rgba(0, 0, 0, .15);
-            line-height: 24px;
+
+        .sheet {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 28px;
         }
-        .invoice-box table {
+
+        .row {
             width: 100%;
-            line-height: inherit;
-            text-align: left;
-            border-collapse: collapse;
+            margin-bottom: 22px;
         }
-        .invoice-box table td {
-            padding: 5px;
+
+        .left,
+        .right {
+            display: inline-block;
             vertical-align: top;
         }
-        .invoice-box table tr td:nth-child(2) {
+
+        .left {
+            width: 54%;
+        }
+
+        .right {
+            width: 45%;
             text-align: right;
         }
-        .invoice-box table tr.top table td {
-            padding-bottom: 20px;
+
+        h1,
+        h2,
+        p {
+            margin: 0;
         }
-        .invoice-box table tr.top table td.title {
-            font-size: 45px;
-            line-height: 45px;
-            color: #333;
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
         }
-        .invoice-box table tr.information table td {
-            padding-bottom: 40px;
+
+        h2 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+            color: #475569;
         }
-        .invoice-box table tr.heading td {
-            background: #eee;
-            border-bottom: 1px solid #ddd;
-            font-weight: bold;
+
+        .muted {
+            color: #64748b;
         }
-        .invoice-box table tr.details td {
-            padding-bottom: 20px;
+
+        .meta {
+            margin-top: 10px;
         }
-        .invoice-box table tr.item td {
-            border-bottom: 1px solid #eee;
+
+        .meta div {
+            margin-bottom: 3px;
         }
-        .invoice-box table tr.item.last td {
-            border-bottom: none;
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
-        .invoice-box table tr.total td:nth-child(2) {
-            border-top: 2px solid #eee;
-            font-weight: bold;
+
+        th,
+        td {
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            vertical-align: top;
+            text-align: left;
         }
-        .footer {
-            margin-top: 50px;
-            text-align: center;
-            font-size: 10px;
-            color: #777;
+
+        th {
+            background: #e2e8f0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .summary {
+            width: 320px;
+            margin-left: auto;
+            margin-top: 18px;
+        }
+
+        .summary td:first-child {
+            font-weight: 700;
+            width: 55%;
+        }
+
+        .terms {
+            margin-top: 26px;
+            font-size: 10.5px;
+        }
+
+        .terms p {
+            margin-bottom: 8px;
+        }
+
+        .thank-you {
+            margin-top: 16px;
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
-    <div class="invoice-box">
-        <table cellpadding="0" cellspacing="0">
-            <tr class="top">
-                <td colspan="2">
-                    <table>
+    @php
+        $customerName = $transaction->customer?->name ?? $transaction->customer_name ?? 'Walk-in Customer';
+        $customerPhone = $transaction->customer?->phone ?? $transaction->customer_phone;
+        $customerEmail = $transaction->customer?->email ?? $transaction->customer_email;
+        $receiptType = match ($transaction->type) {
+            'buy' => 'Buy Receipt',
+            'repair' => 'Repair Receipt',
+            default => 'Sell Receipt',
+        };
+        $amountPaid = (float) ($transaction->amount_paid ?? $transaction->total_amount);
+        $balance = max(0, (float) $transaction->total_amount - $amountPaid);
+    @endphp
+
+    <div class="sheet">
+        <div class="row">
+            <div class="left">
+                <h1>{{ $business['name'] }}</h1>
+                @foreach($business['address_lines'] as $line)
+                    <p>{{ $line }}</p>
+                @endforeach
+                <p>{{ $business['phone'] }}</p>
+            </div>
+            <div class="right">
+                <div class="meta">
+                    <div><strong>Date:</strong> {{ $transaction->created_at->format('d/m/Y') }}</div>
+                    <div><strong>Receipt No:</strong> {{ $transaction->receipt_number ?: 'R-'.$transaction->id }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="left">
+                <h2>Customer Details</h2>
+                <p><strong>Name:</strong> {{ $customerName }}</p>
+                <p><strong>Phone:</strong> {{ $customerPhone ?: '' }}</p>
+                @if($customerEmail)
+                    <p><strong>Email:</strong> {{ $customerEmail }}</p>
+                @endif
+            </div>
+            <div class="right">
+                <h2>{{ $receiptType }}</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <h2>Device Details</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th>Storage</th>
+                        <th>Colour</th>
+                        <th>IMEI 1</th>
+                        <th>IMEI 2</th>
+                        <th>Condition</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($transaction->items as $item)
                         <tr>
-                            <td class="title">
-                                {{ $business['name'] }}
-                            </td>
+                            <td>{{ $item->brand ?: 'N/A' }}</td>
                             <td>
-                                Invoice #: {{ $transaction->id }}<br>
-                                Created: {{ $transaction->created_at->format('M d, Y') }}<br>
-                                @if($transaction->customer)
-                                    Customer ID: {{ $transaction->customer->id }}
-                                @elseif($transaction->customer_name)
-                                    Customer: {{ $transaction->customer_name }}
+                                {{ $item->model ?: ($item->product?->name ?: ($item->description ?: 'N/A')) }}
+                                @if($item->description)
+                                    <div class="muted">{{ $item->description }}</div>
                                 @endif
                             </td>
+                            <td>{{ $item->storage ?: 'N/A' }}</td>
+                            <td>{{ $item->color ?: 'N/A' }}</td>
+                            <td>{{ $item->imei_1 ?: 'N/A' }}</td>
+                            <td>{{ $item->imei_2 ?: 'N/A' }}</td>
+                            <td>{{ $item->condition_grade ?: 'N/A' }}</td>
                         </tr>
-                    </table>
-                </td>
-            </tr>
-            <tr class="information">
-                <td colspan="2">
-                    <table>
-                        <tr>
-                            <td>
-                                {{ $business['name'] }}<br>
-                                {{ $business['address'] }}<br>
-                                {{ $business['phone'] }}<br>
-                                {{ $business['email'] }}
-                            </td>
-                            <td>
-                                @if($transaction->customer)
-                                    {{ $transaction->customer->name }}<br>
-                                    @if($transaction->customer->email) {{ $transaction->customer->email }}<br> @endif
-                                    @if($transaction->customer->phone) {{ $transaction->customer->phone }} @endif
-                                @elseif($transaction->customer_name)
-                                    {{ $transaction->customer_name }}<br>
-                                    @if($transaction->customer_email) {{ $transaction->customer_email }}<br> @endif
-                                    @if($transaction->customer_phone) {{ $transaction->customer_phone }} @endif
-                                @else
-                                    Walk-in Customer
-                                @endif
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            <tr class="heading">
-                <td>Item</td>
-                <td>Price</td>
-            </tr>
-            @foreach($transaction->items as $item)
-            <tr class="item">
-                <td>
-                    {{ $item->description }}
-                    @if($item->product)
-                        ({{ $item->product->name }})
-                    @endif
-                    x {{ $item->quantity }}
-                </td>
-                <td>£{{ number_format($item->price * $item->quantity, 2) }}</td>
-            </tr>
-            @endforeach
-            <tr class="total">
-                <td></td>
-                <td>Total: £{{ number_format($transaction->total_amount, 2) }}</td>
-            </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <table class="summary">
+            <tbody>
+                <tr>
+                    <td>Sale Price</td>
+                    <td>£{{ number_format((float) $transaction->total_amount, 2) }}</td>
+                </tr>
+                <tr>
+                    <td>Amount Paid</td>
+                    <td>£{{ number_format($amountPaid, 2) }}</td>
+                </tr>
+                <tr>
+                    <td>Balance</td>
+                    <td>£{{ number_format($balance, 2) }}</td>
+                </tr>
+                <tr>
+                    <td>Payment Method</td>
+                    <td>{{ $transaction->payment_method ?: 'Cash' }}</td>
+                </tr>
+            </tbody>
         </table>
-        <div class="footer">
-            All repairs are covered under a 6 month warranty besides accidental damage.
+
+        <div class="terms">
+            <h2>Terms &amp; Conditions</h2>
+            <p>All sales are subject to PhoneWorks terms and conditions. Please keep this receipt for warranty and future reference.</p>
+
+            <p><strong>Returns &amp; Warranty:</strong> 14-day return or exchange on purchases (device must be in the same condition with all accessories). Phones include a 1-year hardware warranty; accessories include 6-month warranty. Warranty does not cover physical damage, liquid damage, battery wear, software issues, or lost/stolen devices.</p>
+
+            <p><strong>Condition &amp; Inspection:</strong> Customers should inspect devices before leaving the shop. Once the device leaves the premises, PhoneWorks is not responsible for physical damage. Used/refurbished devices may show minor wear; battery health may vary.</p>
+
+            <p><strong>Repairs:</strong> Repair quotes are estimates only. PhoneWorks is not responsible for hidden faults revealed during repair. Third-party repair attempts void any warranty.</p>
+
+            <p><strong>Buy-Back / Trade-In:</strong> Seller confirms they legally own the device and may be asked for ID. Devices are checked for IMEI/activation lock status; failed checks cancel the transaction. All trade-ins/buy-backs are final once payment is made.</p>
+
+            <p><strong>Data &amp; Privacy:</strong> Customers must back up and remove personal data before sale, return, or repair. PhoneWorks is not liable for any data loss or remaining data on devices.</p>
+
+            <p><strong>Proof of Purchase:</strong> A valid receipt is required for returns, warranty claims, or service.</p>
+
+            <p><strong>Payments:</strong> Card/bank payments may take time to process. Refunds are issued to the original payment method only.</p>
+
+            <p><strong>Liability:</strong> PhoneWorks is not liable for indirect or consequential losses arising from device failure or repair.</p>
+
+            <p class="thank-you">Thank you for choosing PhoneWorks</p>
         </div>
     </div>
 </body>

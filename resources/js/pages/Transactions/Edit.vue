@@ -16,7 +16,23 @@ defineProps<SharedPageProps & {
         customer_name: string | null;
         customer_email: string | null;
         customer_phone: string | null;
-        items: Array<{ product_id: number | null; product_name: string | null; description: string | null; quantity: number; price: number }>;
+        amount_paid: number;
+        balance_amount: number;
+        payment_method: string | null;
+        items: Array<{
+            product_id: number | null;
+            product_name: string | null;
+            description: string | null;
+            brand: string | null;
+            model: string | null;
+            storage: string | null;
+            color: string | null;
+            imei_1: string | null;
+            imei_2: string | null;
+            condition_grade: string | null;
+            quantity: number;
+            price: number;
+        }>;
     };
 }>();
 </script>

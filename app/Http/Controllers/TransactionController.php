@@ -6,15 +6,17 @@ use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request): \Illuminate\Http\JsonResponse|Response
+    public function index(Request $request): JsonResponse|Response
     {
         $query = Transaction::with(['customer', 'user', 'items.product']);
 
@@ -41,6 +43,7 @@ class TransactionController extends Controller
                 'id' => $transaction->id,
                 'type' => $transaction->type,
                 'status' => $transaction->status,
+                'receipt_number' => $transaction->receipt_number,
                 'created_at' => $transaction->created_at?->toIso8601String(),
                 'customer_name' => $transaction->customer?->name ?? $transaction->customer_name ?? 'Guest',
                 'total_amount' => (float) $transaction->total_amount,
@@ -57,7 +60,7 @@ class TransactionController extends Controller
         ]);
     }
 
-    public function create(Request $request): \Illuminate\Http\JsonResponse|Response
+    public function create(Request $request): JsonResponse|Response
     {
         $customers = Customer::query()->orderBy('name')->get(['id', 'name', 'email', 'phone']);
         if (request()->wantsJson()) {
@@ -78,9 +81,18 @@ class TransactionController extends Controller
             'customer_name' => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'customer_phone' => 'nullable|string|max:20',
+            'amount_paid' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|string|max:100',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'nullable|exists:products,id',
             'items.*.description' => 'nullable|string',
+            'items.*.brand' => 'nullable|string|max:255',
+            'items.*.model' => 'nullable|string|max:255',
+            'items.*.storage' => 'nullable|string|max:255',
+            'items.*.color' => 'nullable|string|max:255',
+            'items.*.imei_1' => 'nullable|string|max:255',
+            'items.*.imei_2' => 'nullable|string|max:255',
+            'items.*.condition_grade' => 'nullable|string|max:255',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
         ]);
@@ -94,6 +106,7 @@ class TransactionController extends Controller
             }
 
             $transaction = Transaction::create([
+                'receipt_number' => $this->makeReceiptNumber(),
                 'type' => $validated['type'],
                 'customer_id' => $validated['customer_id'] ?? null,
                 'customer_name' => $validated['customer_name'] ?? null,
@@ -101,17 +114,13 @@ class TransactionController extends Controller
                 'customer_phone' => $validated['customer_phone'] ?? null,
                 'user_id' => Auth::id(),
                 'total_amount' => $totalAmount,
+                'amount_paid' => array_key_exists('amount_paid', $validated) && $validated['amount_paid'] !== null ? $validated['amount_paid'] : $totalAmount,
+                'payment_method' => $validated['payment_method'] ?? null,
                 'status' => 'completed',
             ]);
 
             foreach ($validated['items'] as $itemData) {
-                TransactionItem::create([
-                    'transaction_id' => $transaction->id,
-                    'product_id' => $itemData['product_id'] ?? null,
-                    'description' => $itemData['description'] ?? null,
-                    'quantity' => $itemData['quantity'],
-                    'price' => $itemData['price'],
-                ]);
+                TransactionItem::create($this->normalizeItemPayload($transaction->id, $itemData));
             }
 
             DB::commit();
@@ -151,9 +160,18 @@ class TransactionController extends Controller
             'customer_name' => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'customer_phone' => 'nullable|string|max:20',
+            'amount_paid' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|string|max:100',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'nullable|exists:products,id',
             'items.*.description' => 'nullable|string',
+            'items.*.brand' => 'nullable|string|max:255',
+            'items.*.model' => 'nullable|string|max:255',
+            'items.*.storage' => 'nullable|string|max:255',
+            'items.*.color' => 'nullable|string|max:255',
+            'items.*.imei_1' => 'nullable|string|max:255',
+            'items.*.imei_2' => 'nullable|string|max:255',
+            'items.*.condition_grade' => 'nullable|string|max:255',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
         ]);
@@ -171,22 +189,19 @@ class TransactionController extends Controller
             }
 
             $transaction->update([
+                'receipt_number' => $transaction->receipt_number ?: $this->makeReceiptNumber(),
                 'type' => $validated['type'],
                 'customer_id' => $validated['customer_id'] ?? null,
                 'customer_name' => $validated['customer_name'] ?? null,
                 'customer_email' => $validated['customer_email'] ?? null,
                 'customer_phone' => $validated['customer_phone'] ?? null,
                 'total_amount' => $totalAmount,
+                'amount_paid' => array_key_exists('amount_paid', $validated) && $validated['amount_paid'] !== null ? $validated['amount_paid'] : $totalAmount,
+                'payment_method' => $validated['payment_method'] ?? null,
             ]);
 
             foreach ($validated['items'] as $itemData) {
-                TransactionItem::create([
-                    'transaction_id' => $transaction->id,
-                    'product_id' => $itemData['product_id'] ?? null,
-                    'description' => $itemData['description'] ?? null,
-                    'quantity' => $itemData['quantity'],
-                    'price' => $itemData['price'],
-                ]);
+                TransactionItem::create($this->normalizeItemPayload($transaction->id, $itemData));
             }
 
             DB::commit();
@@ -219,16 +234,19 @@ class TransactionController extends Controller
         $data = [
             'transaction' => $transaction,
             'business' => [
-                'name' => env('BUSINESS_NAME', 'ShopSell'),
-                'address' => env('BUSINESS_ADDRESS', '123 Street, City, Postcode'),
-                'phone' => env('BUSINESS_PHONE', '0123456789'),
-                'email' => env('BUSINESS_EMAIL', 'contact@shopsell.com'),
+                'name' => env('BUSINESS_NAME', 'PhoneWorks Lancaster'),
+                'address_lines' => array_filter([
+                    env('BUSINESS_ADDRESS_LINE_1', '65 Penny Street'),
+                    env('BUSINESS_ADDRESS_LINE_2', 'Lancaster'),
+                    env('BUSINESS_ADDRESS_LINE_3', 'LA1 1XF'),
+                ]),
+                'phone' => env('BUSINESS_PHONE', '01524 935470'),
             ],
         ];
 
         $pdf = Pdf::loadView('transactions.invoice', $data);
 
-        return $pdf->download('invoice-'.$transaction->id.'.pdf');
+        return $pdf->download('receipt-'.($transaction->receipt_number ?: $transaction->id).'.pdf');
     }
 
     public function destroy(Transaction $transaction)
@@ -255,6 +273,7 @@ class TransactionController extends Controller
     {
         return [
             'id' => $transaction->id,
+            'receipt_number' => $transaction->receipt_number,
             'type' => $transaction->type,
             'status' => $transaction->status,
             'customer_id' => $transaction->customer_id,
@@ -262,6 +281,9 @@ class TransactionController extends Controller
             'customer_email' => $transaction->customer?->email ?? $transaction->customer_email,
             'customer_phone' => $transaction->customer?->phone ?? $transaction->customer_phone,
             'total_amount' => (float) $transaction->total_amount,
+            'amount_paid' => (float) ($transaction->amount_paid ?? $transaction->total_amount),
+            'balance_amount' => max(0, (float) $transaction->total_amount - (float) ($transaction->amount_paid ?? $transaction->total_amount)),
+            'payment_method' => $transaction->payment_method,
             'created_at' => $transaction->created_at?->toIso8601String(),
             'user_name' => $includeMeta ? $transaction->user?->name : null,
             'items' => $transaction->items->map(fn (TransactionItem $item) => [
@@ -269,9 +291,39 @@ class TransactionController extends Controller
                 'product_id' => $item->product_id,
                 'product_name' => $item->product?->name,
                 'description' => $item->description,
+                'brand' => $item->brand,
+                'model' => $item->model,
+                'storage' => $item->storage,
+                'color' => $item->color,
+                'imei_1' => $item->imei_1,
+                'imei_2' => $item->imei_2,
+                'condition_grade' => $item->condition_grade,
                 'quantity' => $item->quantity,
                 'price' => (float) $item->price,
             ])->values(),
         ];
+    }
+
+    protected function normalizeItemPayload(int $transactionId, array $itemData): array
+    {
+        return [
+            'transaction_id' => $transactionId,
+            'product_id' => $itemData['product_id'] ?? null,
+            'brand' => $itemData['brand'] ?? null,
+            'model' => $itemData['model'] ?? null,
+            'storage' => $itemData['storage'] ?? null,
+            'color' => $itemData['color'] ?? null,
+            'imei_1' => $itemData['imei_1'] ?? null,
+            'imei_2' => $itemData['imei_2'] ?? null,
+            'condition_grade' => $itemData['condition_grade'] ?? null,
+            'description' => $itemData['description'] ?? null,
+            'quantity' => $itemData['quantity'],
+            'price' => $itemData['price'],
+        ];
+    }
+
+    protected function makeReceiptNumber(): string
+    {
+        return 'R-'.Str::upper(Str::random(12));
     }
 }

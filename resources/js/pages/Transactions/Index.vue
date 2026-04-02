@@ -35,6 +35,7 @@
                         <table class="min-w-full divide-y divide-white/10 text-left">
                             <thead class="text-xs uppercase tracking-[0.25em] text-slate-400">
                                 <tr>
+                                    <th class="px-6 py-4">Receipt</th>
                                     <th class="px-6 py-4">Date</th>
                                     <th class="px-6 py-4">Type</th>
                                     <th class="px-6 py-4">Items</th>
@@ -46,6 +47,7 @@
                             </thead>
                             <tbody class="divide-y divide-white/5">
                                 <tr v-for="transaction in transactions" :key="transaction.id" class="text-sm text-slate-200">
+                                    <td class="px-6 py-4 font-mono text-xs text-slate-300">{{ transaction.receipt_number || `#${transaction.id}` }}</td>
                                     <td class="px-6 py-4">{{ formatDate(transaction.created_at) }}</td>
                                     <td class="px-6 py-4 capitalize">{{ transaction.type }}</td>
                                     <td class="px-6 py-4">{{ transaction.items.join(', ') }}</td>
@@ -62,7 +64,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="transactions.length === 0">
-                                    <td colspan="7" class="px-6 py-12 text-center text-sm text-slate-500">No transactions found.</td>
+                                    <td colspan="8" class="px-6 py-12 text-center text-sm text-slate-500">No transactions found.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -92,6 +94,7 @@ const props = defineProps<SharedPageProps & {
     filters: { type: string; status: string };
     transactions: Array<{
         id: number;
+        receipt_number: string | null;
         type: string;
         status: string;
         created_at: string;
