@@ -66,6 +66,38 @@ class InventoryController extends Controller
     }
 
     /**
+     * Show the form for editing the specified inventory item.
+     */
+    public function edit(InventoryItem $inventory): Response
+    {
+        $inventory->load('product.cexProducts');
+
+        return Inertia::render('Inventory/Edit', [
+            'item' => [
+                'id' => $inventory->id,
+                'product_id' => $inventory->product_id,
+                'product' => $inventory->product ? [
+                    'id' => $inventory->product->id,
+                    'name' => $inventory->product->name,
+                    'image_url' => $inventory->product->cexProducts->first()?->image_url ?? 'https://via.placeholder.com/150',
+                    'variants' => $inventory->product->cexProducts
+                        ->sortByDesc('sale_price')
+                        ->unique('grade')
+                        ->values()
+                        ->map(fn ($variant) => [
+                            'sale' => (float) $variant->sale_price,
+                        ]),
+                ] : null,
+                'imei' => $inventory->imei,
+                'condition' => $inventory->condition,
+                'purchase_price' => (float) ($inventory->purchase_price ?? 0),
+                'sale_price' => (float) ($inventory->sale_price ?? 0),
+                'status' => $inventory->status,
+            ],
+        ]);
+    }
+
+    /**
      * Store a newly created inventory item.
      */
     public function store(Request $request)
@@ -76,11 +108,31 @@ class InventoryController extends Controller
             'condition' => 'nullable|string|max:255',
             'purchase_price' => 'nullable|numeric',
             'sale_price' => 'nullable|numeric',
+            'status' => 'nullable|in:available,reserved,sold',
         ]);
 
         InventoryItem::create($validated);
 
         return redirect()->route('inventory.index')->with('success', 'Item added to inventory.');
+    }
+
+    /**
+     * Update the specified inventory item.
+     */
+    public function update(Request $request, InventoryItem $inventory)
+    {
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'imei' => 'nullable|string|max:255',
+            'condition' => 'nullable|string|max:255',
+            'purchase_price' => 'nullable|numeric',
+            'sale_price' => 'nullable|numeric',
+            'status' => 'required|in:available,reserved,sold',
+        ]);
+
+        $inventory->update($validated);
+
+        return redirect()->route('inventory.index')->with('success', 'Inventory item updated.');
     }
 
     /**

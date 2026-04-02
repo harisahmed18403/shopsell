@@ -57,6 +57,27 @@ class InventoryTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('Inventory/Create'));
     }
 
+    public function test_user_can_view_inventory_edit_page()
+    {
+        $item = InventoryItem::create([
+            'product_id' => $this->product->id,
+            'imei' => 'EDIT-ME',
+            'condition' => 'Good',
+            'purchase_price' => 400,
+            'sale_price' => 650,
+            'status' => 'available',
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('inventory.edit', $item))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Inventory/Edit')
+                ->where('item.id', $item->id)
+                ->where('item.imei', 'EDIT-ME')
+            );
+    }
+
     public function test_user_can_add_item_to_inventory()
     {
         $itemData = [
@@ -88,5 +109,36 @@ class InventoryTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseMissing('inventory_items', ['id' => $item->id]);
+    }
+
+    public function test_user_can_update_inventory_item()
+    {
+        $item = InventoryItem::create([
+            'product_id' => $this->product->id,
+            'imei' => 'OLD-IMEI',
+            'condition' => 'Fair',
+            'purchase_price' => 300,
+            'sale_price' => 500,
+            'status' => 'available',
+        ]);
+
+        $response = $this->actingAs($this->user)->put(route('inventory.update', $item), [
+            'product_id' => $this->product->id,
+            'imei' => 'NEW-IMEI',
+            'condition' => 'Excellent',
+            'purchase_price' => 350,
+            'sale_price' => 575,
+            'status' => 'reserved',
+        ]);
+
+        $response->assertRedirect(route('inventory.index'));
+        $this->assertDatabaseHas('inventory_items', [
+            'id' => $item->id,
+            'imei' => 'NEW-IMEI',
+            'condition' => 'Excellent',
+            'purchase_price' => 350,
+            'sale_price' => 575,
+            'status' => 'reserved',
+        ]);
     }
 }

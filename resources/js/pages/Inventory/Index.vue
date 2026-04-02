@@ -54,7 +54,12 @@
                                     </td>
                                     <td class="px-6 py-4 text-xs text-slate-400">{{ formatDate(item.created_at) }}</td>
                                     <td class="px-6 py-4">
-                                        <div class="flex justify-end">
+                                        <div class="flex justify-end gap-2">
+                                            <Link :href="`/inventory/${item.id}/edit`">
+                                                <Button variant="outline" size="sm">
+                                                    Edit
+                                                </Button>
+                                            </Link>
                                             <Button variant="ghost" size="sm" @click="removeItem(item.id)">
                                                 Remove
                                             </Button>
