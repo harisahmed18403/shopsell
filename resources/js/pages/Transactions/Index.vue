@@ -12,6 +12,12 @@
             <Card class="border-white/10 bg-slate-900/80">
                 <CardContent class="pt-6">
                     <form class="flex flex-wrap gap-3" @submit.prevent="applyFilters">
+                        <input
+                            v-model="form.search"
+                            type="text"
+                            placeholder="Search receipt, customer, IMEI, model..."
+                            class="h-10 min-w-72 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white placeholder:text-slate-500"
+                        />
                         <select v-model="form.type" class="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white">
                             <option value="">All types</option>
                             <option value="sell">Sell</option>
@@ -41,7 +47,9 @@
                                     <th class="px-6 py-4">Items</th>
                                     <th class="px-6 py-4">Customer</th>
                                     <th class="px-6 py-4">Total</th>
+                                    <th class="px-6 py-4">Balance</th>
                                     <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4">Method</th>
                                     <th class="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -53,7 +61,9 @@
                                     <td class="px-6 py-4">{{ transaction.items.join(', ') }}</td>
                                     <td class="px-6 py-4">{{ transaction.customer_name }}</td>
                                     <td class="px-6 py-4">{{ formatCurrency(transaction.total_amount) }}</td>
+                                    <td class="px-6 py-4">{{ formatCurrency(transaction.balance_amount) }}</td>
                                     <td class="px-6 py-4">{{ transaction.status }}</td>
+                                    <td class="px-6 py-4">{{ transaction.payment_method || 'N/A' }}</td>
                                     <td class="px-6 py-4">
                                         <div class="flex justify-end gap-2">
                                             <Link :href="`/transactions/${transaction.id}`"><Button variant="ghost" size="sm">Details</Button></Link>
@@ -64,7 +74,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="transactions.length === 0">
-                                    <td colspan="8" class="px-6 py-12 text-center text-sm text-slate-500">No transactions found.</td>
+                                    <td colspan="10" class="px-6 py-12 text-center text-sm text-slate-500">No transactions found.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -91,7 +101,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import type { SharedPageProps } from '@/types';
 
 const props = defineProps<SharedPageProps & {
-    filters: { type: string; status: string };
+    filters: { search: string; type: string; status: string };
     transactions: Array<{
         id: number;
         receipt_number: string | null;
@@ -100,15 +110,17 @@ const props = defineProps<SharedPageProps & {
         created_at: string;
         customer_name: string;
         total_amount: number;
+        balance_amount: number;
+        payment_method: string | null;
         items: string[];
     }>;
     pagination: { total: number; links: Array<{ url: string | null; label: string; active: boolean }> };
 }>();
 
-const form = useForm({ type: props.filters.type, status: props.filters.status });
+const form = useForm({ search: props.filters.search, type: props.filters.type, status: props.filters.status });
 
 function applyFilters() {
-    router.get('/transactions', { type: form.type || undefined, status: form.status || undefined }, { preserveState: true, replace: true });
+    router.get('/transactions', { search: form.search || undefined, type: form.type || undefined, status: form.status || undefined }, { preserveState: true, replace: true });
 }
 
 function resetFilters() {

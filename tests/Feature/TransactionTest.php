@@ -189,6 +189,43 @@ class TransactionTest extends TestCase
             );
     }
 
+    public function test_user_can_search_transactions_by_receipt_or_imei()
+    {
+        $this->actingAs($this->user)->post(route('transactions.store'), [
+            'type' => 'sell',
+            'customer_name' => 'Receipt Search Customer',
+            'items' => [
+                [
+                    'brand' => 'Apple',
+                    'model' => 'iPhone 16 Pro Max',
+                    'imei_1' => 'UNIQUE-IMEI-001',
+                    'quantity' => 1,
+                    'price' => 850,
+                ],
+            ],
+        ]);
+
+        $transaction = \App\Models\Transaction::firstOrFail();
+
+        $this->actingAs($this->user)
+            ->get(route('transactions.index', ['search' => 'UNIQUE-IMEI-001']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Transactions/Index')
+                ->where('filters.search', 'UNIQUE-IMEI-001')
+                ->has('transactions', 1)
+                ->where('transactions.0.receipt_number', $transaction->receipt_number)
+            );
+
+        $this->actingAs($this->user)
+            ->get(route('transactions.index', ['search' => $transaction->receipt_number]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Transactions/Index')
+                ->has('transactions', 1)
+            );
+    }
+
     public function test_invoice_download_includes_receipt_headers()
     {
         $this->actingAs($this->user)->post(route('transactions.store'), [

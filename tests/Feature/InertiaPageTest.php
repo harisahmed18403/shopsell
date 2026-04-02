@@ -38,6 +38,8 @@ class InertiaPageTest extends TestCase
             'customer_id' => $customer->id,
             'user_id' => $user->id,
             'total_amount' => 123.45,
+            'amount_paid' => 100,
+            'payment_method' => 'Card',
             'status' => 'completed',
         ]);
 
@@ -48,6 +50,8 @@ class InertiaPageTest extends TestCase
                 ->component('Dashboard')
                 ->where('auth.user.email', $user->email)
                 ->where('routing.current', 'dashboard')
+                ->where('outstandingBalance', 23.45)
+                ->has('paymentMix')
                 ->has('recentTransactions', 1)
                 ->where('recentTransactions.0.customer_name', 'Jane Doe')
             );
@@ -61,6 +65,8 @@ class InertiaPageTest extends TestCase
             'type' => 'sell',
             'user_id' => $user->id,
             'total_amount' => 200,
+            'amount_paid' => 150,
+            'payment_method' => 'Cash',
             'status' => 'completed',
             'created_at' => now()->subMonth(),
             'updated_at' => now()->subMonth(),
@@ -81,6 +87,8 @@ class InertiaPageTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Reports')
                 ->where('routing.current', 'reports')
+                ->has('paymentMethods')
+                ->has('deviceBreakdown')
                 ->has('monthlyData')
                 ->has('buyVsSell')
                 ->has('profitData')

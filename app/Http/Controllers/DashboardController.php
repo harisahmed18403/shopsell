@@ -58,18 +58,35 @@ class DashboardController extends Controller
                 'value' => (int) $row->count,
             ])->values();
 
+        $paymentMix = Transaction::select('payment_method', DB::raw('count(*) as count'))
+            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->whereNotNull('payment_method')
+            ->groupBy('payment_method')
+            ->orderByDesc('count')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => $row->payment_method,
+                'value' => (int) $row->count,
+            ])->values();
+
+        $outstandingBalance = round((float) Transaction::selectRaw('SUM(CASE WHEN total_amount - COALESCE(amount_paid, total_amount) > 0 THEN total_amount - COALESCE(amount_paid, total_amount) ELSE 0 END) as balance')
+            ->value('balance'), 2);
+
         return Inertia::render('Dashboard', [
             'dailySales' => $dailySales,
             'weeklySales' => $weeklySales,
             'monthlySales' => $monthlySales,
             'transactionCount' => Transaction::where('created_at', '>=', Carbon::now()->subDays(30))->count(),
             'averageTicket' => (float) Transaction::whereIn('type', ['sell', 'repair'])->where('created_at', '>=', Carbon::now()->subDays(30))->avg('total_amount'),
+            'outstandingBalance' => $outstandingBalance,
             'salesTrend' => $salesTrend,
             'typeBreakdown' => $typeBreakdown,
+            'paymentMix' => $paymentMix,
             'recentTransactions' => $recentTransactions->map(fn (Transaction $transaction) => [
                 'id' => $transaction->id,
                 'type' => $transaction->type,
                 'total_amount' => (float) $transaction->total_amount,
+                'receipt_number' => $transaction->receipt_number,
                 'customer_name' => $transaction->customer?->name ?? 'Walk-in customer',
                 'created_at' => $transaction->created_at?->toIso8601String(),
             ])->values(),
@@ -120,11 +137,36 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $paymentMethods = Transaction::select(
+            DB::raw("COALESCE(payment_method, 'Unspecified') as payment_method"),
+            DB::raw('count(*) as count'),
+            DB::raw('sum(amount_paid) as total_paid')
+        )
+            ->where('created_at', '>=', Carbon::now()->subMonths(6))
+            ->groupBy('payment_method')
+            ->orderByDesc('count')
+            ->get();
+
+        $deviceBreakdown = DB::table('transaction_items')
+            ->select('brand', 'model', 'description', DB::raw('count(*) as count'))
+            ->groupBy('brand', 'model', 'description')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get()
+            ->map(fn ($row) => [
+                'label' => trim(implode(' ', array_filter([$row->brand, $row->model]))) ?: ($row->description ?: 'Unknown device'),
+                'value' => (int) $row->count,
+            ])->values();
+
+        $outstandingBalance = round((float) Transaction::selectRaw('SUM(CASE WHEN total_amount - COALESCE(amount_paid, total_amount) > 0 THEN total_amount - COALESCE(amount_paid, total_amount) ELSE 0 END) as balance')
+            ->value('balance'), 2);
+
         return Inertia::render('Reports', [
             'summary' => [
                 'sales' => (float) $monthlyData->sum('total'),
                 'profit' => (float) $profitData->sum('profit'),
                 'repairs' => Transaction::where('type', 'repair')->where('created_at', '>=', Carbon::now()->subMonths(6))->count(),
+                'outstanding_balance' => $outstandingBalance,
             ],
             'monthlyData' => $monthlyData->map(fn ($row) => [
                 'month' => $row->month,
@@ -143,6 +185,12 @@ class DashboardController extends Controller
                 'label' => $row->name,
                 'value' => (int) $row->quantity,
             ])->values(),
+            'paymentMethods' => $paymentMethods->map(fn ($row) => [
+                'label' => $row->payment_method,
+                'value' => (int) $row->count,
+                'total_paid' => (float) $row->total_paid,
+            ])->values(),
+            'deviceBreakdown' => $deviceBreakdown,
         ]);
     }
 }

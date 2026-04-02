@@ -28,6 +28,30 @@ class TransactionController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('search')) {
+            $search = $request->string('search')->toString();
+
+            $query->where(function ($builder) use ($search) {
+                $builder
+                    ->where('receipt_number', 'like', '%'.$search.'%')
+                    ->orWhere('customer_name', 'like', '%'.$search.'%')
+                    ->orWhere('customer_phone', 'like', '%'.$search.'%')
+                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                        $customerQuery
+                            ->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('phone', 'like', '%'.$search.'%');
+                    })
+                    ->orWhereHas('items', function ($itemQuery) use ($search) {
+                        $itemQuery
+                            ->where('description', 'like', '%'.$search.'%')
+                            ->orWhere('brand', 'like', '%'.$search.'%')
+                            ->orWhere('model', 'like', '%'.$search.'%')
+                            ->orWhere('imei_1', 'like', '%'.$search.'%')
+                            ->orWhere('imei_2', 'like', '%'.$search.'%');
+                    });
+            });
+        }
+
         $transactions = $query->latest()->paginate(10)->withQueryString();
 
         if (request()->wantsJson()) {
@@ -36,6 +60,7 @@ class TransactionController extends Controller
 
         return Inertia::render('Transactions/Index', [
             'filters' => [
+                'search' => $request->string('search')->toString(),
                 'type' => $request->string('type')->toString(),
                 'status' => $request->string('status')->toString(),
             ],
@@ -47,7 +72,16 @@ class TransactionController extends Controller
                 'created_at' => $transaction->created_at?->toIso8601String(),
                 'customer_name' => $transaction->customer?->name ?? $transaction->customer_name ?? 'Guest',
                 'total_amount' => (float) $transaction->total_amount,
-                'items' => $transaction->items->map(fn ($item) => $item->product?->name ?? $item->description)->filter()->values(),
+                'balance_amount' => max(0, (float) $transaction->total_amount - (float) ($transaction->amount_paid ?? $transaction->total_amount)),
+                'payment_method' => $transaction->payment_method,
+                'items' => $transaction->items->map(function ($item) {
+                    return collect([
+                        trim(implode(' ', array_filter([$item->brand, $item->model]))),
+                        $item->product?->name,
+                        $item->description,
+                        $item->imei_1,
+                    ])->filter()->first();
+                })->filter()->values(),
             ])->items(),
             'pagination' => [
                 'total' => $transactions->total(),
