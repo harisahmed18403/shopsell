@@ -2,6 +2,7 @@ export interface AuthUser {
     id: number;
     name: string;
     email: string;
+    role?: string;
     is_super_admin?: boolean;
     email_verified_at?: string | null;
 }

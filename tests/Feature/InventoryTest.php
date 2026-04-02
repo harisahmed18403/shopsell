@@ -2,13 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\SuperCategory;
-use App\Models\ProductLine;
 use App\Models\Category;
-use App\Models\Product;
 use App\Models\InventoryItem;
+use App\Models\Product;
+use App\Models\ProductLine;
+use App\Models\SuperCategory;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class InventoryTest extends TestCase
@@ -16,6 +17,7 @@ class InventoryTest extends TestCase
     use RefreshDatabase;
 
     protected $user;
+
     protected $product;
 
     protected function setUp(): void
@@ -33,7 +35,7 @@ class InventoryTest extends TestCase
         $super = SuperCategory::create(['id' => 1, 'name' => 'Tech']);
         $line = ProductLine::create(['id' => 1, 'name' => 'Phones', 'super_category_id' => $super->id]);
         $category = Category::create(['id' => 1, 'name' => 'Smartphones', 'product_line_id' => $line->id]);
-        
+
         $this->product = Product::create([
             'name' => 'iPhone 13',
             'category_id' => $category->id,
@@ -43,8 +45,8 @@ class InventoryTest extends TestCase
     public function test_user_can_view_inventory_index()
     {
         $response = $this->actingAs($this->user)->get(route('inventory.index'));
-        $response->assertStatus(200);
-        $response->assertSee('Physical Inventory');
+        $response->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Inventory/Index'));
     }
 
     public function test_user_can_add_item_to_inventory()

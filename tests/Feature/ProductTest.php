@@ -2,12 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\SuperCategory;
-use App\Models\ProductLine;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductLine;
+use App\Models\SuperCategory;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ProductTest extends TestCase
@@ -15,6 +16,7 @@ class ProductTest extends TestCase
     use RefreshDatabase;
 
     protected $user;
+
     protected $category;
 
     protected function setUp(): void
@@ -38,7 +40,8 @@ class ProductTest extends TestCase
     {
         $response = $this->actingAs($this->user)->get(route('products.index'));
 
-        $response->assertStatus(200);
+        $response->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Products/Index'));
     }
 
     public function test_user_can_create_product()
@@ -57,6 +60,23 @@ class ProductTest extends TestCase
         ]);
     }
 
+    public function test_user_can_view_product_detail_page()
+    {
+        $product = Product::create([
+            'name' => 'iPhone 15',
+            'category_id' => $this->category->id,
+            'sale_price' => 999,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('products.show', $product))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Products/Show')
+                ->where('product.name', 'iPhone 15')
+            );
+    }
+
     public function test_product_filtering_works()
     {
         Product::create([
@@ -73,7 +93,11 @@ class ProductTest extends TestCase
 
         $response = $this->actingAs($this->user)->get(route('products.index', ['search' => 'Apple']));
 
-        $response->assertSee('Apple iPhone');
-        $response->assertDontSee('Samsung Galaxy');
+        $response->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Products/Index')
+                ->has('products', 1)
+                ->where('products.0.name', 'Apple iPhone')
+            );
     }
 }

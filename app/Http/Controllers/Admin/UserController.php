@@ -7,13 +7,36 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $users = User::latest()->paginate(10);
-        return view('admin.users.index', compact('users'));
+
+        return Inertia::render('Admin/Users/Index', [
+            'users' => $users->through(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'created_at' => $user->created_at?->toIso8601String(),
+                'can_delete' => $user->id !== auth()->id(),
+            ])->items(),
+            'pagination' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+                'links' => collect($users->linkCollection())->map(fn ($link) => [
+                    'url' => $link['url'],
+                    'label' => strip_tags($link['label']),
+                    'active' => $link['active'],
+                ])->values(),
+            ],
+        ]);
     }
 
     public function create()
@@ -72,6 +95,7 @@ class UserController extends Controller
         }
 
         $user->delete();
+
         return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
     }
 }

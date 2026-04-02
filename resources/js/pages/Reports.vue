@@ -1,5 +1,5 @@
 <template>
-    <AppLayout :app-name="app.name" :current-route="routing.current" :flash="flash">
+    <AppLayout :app-name="app.name" :current-route="routing.current" :flash="flash" :is-super-admin="auth.user?.is_super_admin">
         <section class="space-y-6">
             <div class="flex flex-col gap-2">
                 <p class="text-sm uppercase tracking-[0.35em] text-sky-300">Reports</p>

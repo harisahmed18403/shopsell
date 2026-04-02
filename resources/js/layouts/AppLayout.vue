@@ -32,25 +32,28 @@
 
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 import AppLogo from '@/components/app/AppLogo.vue';
 import FlashMessages from '@/components/app/FlashMessages.vue';
 import { cn } from '@/lib/utils';
 import type { FlashMessages as FlashMessageBag } from '@/types';
 
-defineProps<{
+const props = defineProps<{
     appName: string;
     currentRoute?: string | null;
     flash: FlashMessageBag;
+    isSuperAdmin?: boolean;
 }>();
 
-const navigation = [
+const navigation = computed(() => [
     { label: 'Dashboard', href: '/dashboard', route: 'dashboard' },
     { label: 'Reports', href: '/reports', route: 'reports' },
     { label: 'Products', href: '/products', route: 'products.index' },
     { label: 'Inventory', href: '/inventory', route: 'inventory.index' },
     { label: 'Transactions', href: '/transactions', route: 'transactions.index' },
     { label: 'Customers', href: '/customers', route: 'customers.index' },
+    ...(props.isSuperAdmin ? [{ label: 'Admin', href: '/admin/users', route: 'admin.users.index' }] : []),
     { label: 'Profile', href: '/profile', route: 'profile.edit' },
-];
+]);
 </script>

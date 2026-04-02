@@ -42,13 +42,14 @@ class HandleInertiaRequests extends Middleware
                 'url' => $request->getSchemeAndHttpHost(),
             ],
             'auth' => [
-                'user' => $request->user()?->only([
-                    'id',
-                    'name',
-                    'email',
-                    'is_super_admin',
-                    'email_verified_at',
-                ]),
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'role' => $request->user()->role,
+                    'is_super_admin' => $request->user()->isSuperAdmin(),
+                    'email_verified_at' => $request->user()->email_verified_at?->toIso8601String(),
+                ] : null,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
