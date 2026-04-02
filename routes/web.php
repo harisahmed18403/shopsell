@@ -2,9 +2,10 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
-    return view('welcome');
+    return Inertia::render('Welcome');
 });
 
 Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
@@ -27,10 +28,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('products', \App\Http\Controllers\ProductController::class);
 
     Route::resource('inventory', \App\Http\Controllers\InventoryController::class);
-    
+
     Route::get('transactions/{transaction}/invoice', [\App\Http\Controllers\TransactionController::class, 'downloadInvoice'])->name('transactions.invoice');
     Route::resource('transactions', \App\Http\Controllers\TransactionController::class);
-    
+
     Route::resource('customers', \App\Http\Controllers\CustomerController::class);
 });
 

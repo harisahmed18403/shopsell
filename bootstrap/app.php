@@ -12,8 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
         $middleware->alias([
-            'super_admin' => \App\Http\Middleware::class . '\SuperAdminMiddleware',
+            'super_admin' => \App\Http\Middleware::class.'\SuperAdminMiddleware',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
