@@ -16,6 +16,7 @@ class CustomerController extends Controller
     {
         $customers = Customer::query()
             ->withCount('transactions')
+            ->withSum('transactions as lifetime_value', 'total_amount')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->search;
                 $query->where(function ($nestedQuery) use ($search) {
@@ -39,6 +40,7 @@ class CustomerController extends Controller
                 'phone' => $customer->phone,
                 'address' => $customer->address,
                 'transactions_count' => $customer->transactions_count,
+                'lifetime_value' => (float) ($customer->lifetime_value ?? 0),
                 'created_at' => $customer->created_at?->toIso8601String(),
             ])->items(),
             'pagination' => [
@@ -83,6 +85,9 @@ class CustomerController extends Controller
     public function show(Customer $customer): Response
     {
         $customer->load('transactions.items.product');
+        $transactions = $customer->transactions->sortByDesc('created_at')->values();
+        $lifetimeValue = (float) $transactions->sum('total_amount');
+        $outstandingBalance = (float) $transactions->sum(fn ($transaction) => max(0, (float) $transaction->total_amount - (float) ($transaction->amount_paid ?? $transaction->total_amount)));
 
         return Inertia::render('Customers/Show', [
             'customer' => [
@@ -91,12 +96,26 @@ class CustomerController extends Controller
                 'email' => $customer->email,
                 'phone' => $customer->phone,
                 'address' => $customer->address,
-                'transactions' => $customer->transactions->map(fn ($transaction) => [
+                'summary' => [
+                    'transaction_count' => $transactions->count(),
+                    'lifetime_value' => $lifetimeValue,
+                    'outstanding_balance' => $outstandingBalance,
+                    'last_transaction_at' => $transactions->first()?->created_at?->toIso8601String(),
+                ],
+                'transactions' => $transactions->map(fn ($transaction) => [
                     'id' => $transaction->id,
+                    'receipt_number' => $transaction->receipt_number,
                     'type' => $transaction->type,
                     'status' => $transaction->status,
                     'total_amount' => (float) $transaction->total_amount,
+                    'balance_amount' => max(0, (float) $transaction->total_amount - (float) ($transaction->amount_paid ?? $transaction->total_amount)),
                     'created_at' => $transaction->created_at?->toIso8601String(),
+                    'items' => $transaction->items->map(function ($item) {
+                        return trim(implode(' ', array_filter([$item->brand, $item->model])))
+                            ?: $item->product?->name
+                            ?: $item->description
+                            ?: 'Custom item';
+                    })->values(),
                 ])->values(),
             ],
         ]);

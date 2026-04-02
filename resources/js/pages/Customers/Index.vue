@@ -27,6 +27,7 @@
                                     <th class="px-6 py-4">Name</th>
                                     <th class="px-6 py-4">Contact</th>
                                     <th class="px-6 py-4">Address</th>
+                                    <th class="px-6 py-4">Lifetime value</th>
                                     <th class="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -41,6 +42,7 @@
                                         <p>{{ customer.address || 'No address' }}</p>
                                         <p class="mt-1 text-xs text-slate-500">{{ customer.transactions_count }} transactions</p>
                                     </td>
+                                    <td class="px-6 py-4 font-medium text-white">{{ formatCurrency(customer.lifetime_value) }}</td>
                                     <td class="px-6 py-4">
                                         <div class="flex justify-end gap-2">
                                             <Link :href="`/customers/${customer.id}`"><Button variant="ghost" size="sm">View</Button></Link>
@@ -50,7 +52,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="customers.length === 0">
-                                    <td colspan="4" class="px-6 py-12 text-center text-sm text-slate-500">No customers found.</td>
+                                    <td colspan="5" class="px-6 py-12 text-center text-sm text-slate-500">No customers found.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -74,6 +76,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { formatCurrency } from '@/lib/utils';
 import type { SharedPageProps } from '@/types';
 
 const props = defineProps<SharedPageProps & {
@@ -87,6 +90,7 @@ const props = defineProps<SharedPageProps & {
         phone: string | null;
         address: string | null;
         transactions_count: number;
+        lifetime_value: number;
         created_at: string | null;
     }>;
     pagination: {

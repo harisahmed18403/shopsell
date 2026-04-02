@@ -13,6 +13,33 @@
                 </div>
             </div>
 
+            <div class="grid gap-4 md:grid-cols-4">
+                <Card class="border-white/10 bg-slate-900/80">
+                    <CardContent class="pt-6">
+                        <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Transactions</p>
+                        <p class="mt-3 font-display text-3xl font-semibold text-white">{{ customer.summary.transaction_count }}</p>
+                    </CardContent>
+                </Card>
+                <Card class="border-white/10 bg-slate-900/80">
+                    <CardContent class="pt-6">
+                        <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Lifetime value</p>
+                        <p class="mt-3 font-display text-3xl font-semibold text-white">{{ formatCurrency(customer.summary.lifetime_value) }}</p>
+                    </CardContent>
+                </Card>
+                <Card class="border-white/10 bg-slate-900/80">
+                    <CardContent class="pt-6">
+                        <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Outstanding</p>
+                        <p class="mt-3 font-display text-3xl font-semibold text-white">{{ formatCurrency(customer.summary.outstanding_balance) }}</p>
+                    </CardContent>
+                </Card>
+                <Card class="border-white/10 bg-slate-900/80">
+                    <CardContent class="pt-6">
+                        <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Last transaction</p>
+                        <p class="mt-3 text-white">{{ customer.summary.last_transaction_at ? formatDate(customer.summary.last_transaction_at) : 'No activity yet' }}</p>
+                    </CardContent>
+                </Card>
+            </div>
+
             <div class="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
                 <Card class="border-white/10 bg-slate-900/80">
                     <CardContent class="space-y-4 pt-6">
@@ -43,21 +70,27 @@
                             <table class="min-w-full divide-y divide-white/10 text-left">
                                 <thead class="text-xs uppercase tracking-[0.25em] text-slate-400">
                                     <tr>
-                                        <th class="px-4 py-3">ID</th>
+                                        <th class="px-4 py-3">Receipt</th>
                                         <th class="px-4 py-3">Type</th>
+                                        <th class="px-4 py-3">Devices</th>
                                         <th class="px-4 py-3">Status</th>
                                         <th class="px-4 py-3">Total</th>
+                                        <th class="px-4 py-3">Balance</th>
                                         <th class="px-4 py-3">Created</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-white/5">
                                     <tr v-for="transaction in customer.transactions" :key="transaction.id" class="text-sm text-slate-200">
                                         <td class="px-4 py-4">
-                                            <Link :href="`/transactions/${transaction.id}`" class="text-rose-300 hover:underline">#{{ transaction.id }}</Link>
+                                            <Link :href="`/transactions/${transaction.id}`" class="font-mono text-rose-300 hover:underline">
+                                                {{ transaction.receipt_number || `#${transaction.id}` }}
+                                            </Link>
                                         </td>
                                         <td class="px-4 py-4 capitalize">{{ transaction.type }}</td>
+                                        <td class="px-4 py-4">{{ transaction.items.join(', ') }}</td>
                                         <td class="px-4 py-4">{{ transaction.status }}</td>
                                         <td class="px-4 py-4">{{ formatCurrency(transaction.total_amount) }}</td>
+                                        <td class="px-4 py-4">{{ formatCurrency(transaction.balance_amount) }}</td>
                                         <td class="px-4 py-4">{{ formatDate(transaction.created_at) }}</td>
                                     </tr>
                                 </tbody>
@@ -89,12 +122,21 @@ defineProps<SharedPageProps & {
         email: string | null;
         phone: string | null;
         address: string | null;
+        summary: {
+            transaction_count: number;
+            lifetime_value: number;
+            outstanding_balance: number;
+            last_transaction_at: string | null;
+        };
         transactions: Array<{
             id: number;
+            receipt_number: string | null;
             type: string;
             status: string;
             total_amount: number;
+            balance_amount: number;
             created_at: string;
+            items: string[];
         }>;
     };
 }>();

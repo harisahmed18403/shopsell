@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -40,6 +41,15 @@ class CustomerTest extends TestCase
     {
         $user = User::factory()->create();
         $customer = Customer::create(['name' => 'Jane Doe']);
+        Transaction::create([
+            'receipt_number' => 'R-CUSTOMER-1',
+            'type' => 'sell',
+            'customer_id' => $customer->id,
+            'user_id' => $user->id,
+            'total_amount' => 200,
+            'amount_paid' => 150,
+            'status' => 'completed',
+        ]);
 
         $this->actingAs($user)
             ->get(route('customers.show', $customer))
@@ -47,6 +57,9 @@ class CustomerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Customers/Show')
                 ->where('customer.name', 'Jane Doe')
+                ->where('customer.summary.transaction_count', 1)
+                ->where('customer.summary.outstanding_balance', 50)
+                ->where('customer.transactions.0.receipt_number', 'R-CUSTOMER-1')
             );
     }
 
@@ -77,6 +90,29 @@ class CustomerTest extends TestCase
                 ->component('Customers/Index')
                 ->has('customers', 1)
                 ->where('customers.0.name', 'Jane Doe')
+            );
+    }
+
+    public function test_customer_index_includes_lifetime_value(): void
+    {
+        $user = User::factory()->create();
+        $customer = Customer::create(['name' => 'Jane Doe']);
+        Transaction::create([
+            'receipt_number' => 'R-CUSTOMER-2',
+            'type' => 'sell',
+            'customer_id' => $customer->id,
+            'user_id' => $user->id,
+            'total_amount' => 275,
+            'amount_paid' => 275,
+            'status' => 'completed',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('customers.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Customers/Index')
+                ->where('customers.0.lifetime_value', 275)
             );
     }
 
