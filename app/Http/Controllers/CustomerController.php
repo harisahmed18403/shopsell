@@ -12,17 +12,33 @@ class CustomerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $customers = Customer::latest()->paginate(10);
+        $customers = Customer::query()
+            ->withCount('transactions')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->search;
+                $query->where(function ($nestedQuery) use ($search) {
+                    $nestedQuery->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%')
+                        ->orWhere('phone', 'like', '%'.$search.'%');
+                });
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('Customers/Index', [
+            'filters' => [
+                'search' => $request->string('search')->toString(),
+            ],
             'customers' => $customers->through(fn (Customer $customer) => [
                 'id' => $customer->id,
                 'name' => $customer->name,
                 'email' => $customer->email,
                 'phone' => $customer->phone,
                 'address' => $customer->address,
+                'transactions_count' => $customer->transactions_count,
                 'created_at' => $customer->created_at?->toIso8601String(),
             ])->items(),
             'pagination' => [

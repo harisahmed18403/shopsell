@@ -16,7 +16,30 @@
                 >
                     <p class="text-sm text-slate-400">{{ metric.label }}</p>
                     <p class="mt-3 font-display text-3xl font-semibold text-white">{{ formatCurrency(metric.value) }}</p>
+                    <p v-if="metric.detail" class="mt-2 text-xs text-slate-500">{{ metric.detail }}</p>
                 </article>
+            </div>
+
+            <div class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                <section class="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20">
+                    <div>
+                        <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Sales trend</p>
+                        <h2 class="mt-2 text-2xl font-semibold text-white">Last 14 days</h2>
+                    </div>
+                    <div class="mt-6">
+                        <TrendBars :items="salesTrend" :format="formatCurrency" />
+                    </div>
+                </section>
+
+                <section class="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20">
+                    <div>
+                        <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Mix</p>
+                        <h2 class="mt-2 text-2xl font-semibold text-white">Transaction breakdown</h2>
+                    </div>
+                    <div class="mt-6">
+                        <MetricBars :items="typeBreakdown" />
+                    </div>
+                </section>
             </div>
 
             <section class="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20">
@@ -56,6 +79,8 @@
 </template>
 
 <script setup lang="ts">
+import MetricBars from '@/components/app/MetricBars.vue';
+import TrendBars from '@/components/app/TrendBars.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { SharedPageProps } from '@/types';
@@ -72,12 +97,16 @@ const props = defineProps<SharedPageProps & {
     dailySales: number;
     weeklySales: number;
     monthlySales: number;
+    transactionCount: number;
+    averageTicket: number;
+    salesTrend: Array<{ label: string; value: number }>;
+    typeBreakdown: Array<{ label: string; value: number }>;
     recentTransactions: DashboardTransaction[];
 }>();
 
 const metrics = [
-    { label: 'Today', value: props.dailySales },
-    { label: 'This week', value: props.weeklySales },
-    { label: 'This month', value: props.monthlySales },
+    { label: 'Today', value: props.dailySales, detail: 'Revenue from sell and repair jobs completed today.' },
+    { label: 'This week', value: props.weeklySales, detail: `${props.transactionCount} transactions recorded in the last 30 days.` },
+    { label: 'This month', value: props.monthlySales, detail: `Average ticket ${formatCurrency(props.averageTicket || 0)}.` },
 ];
 </script>

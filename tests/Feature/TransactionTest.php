@@ -154,4 +154,26 @@ class TransactionTest extends TestCase
                 ->where('transaction.id', $transaction->id)
             );
     }
+
+    public function test_user_can_delete_transaction()
+    {
+        $this->actingAs($this->user)->post(route('transactions.store'), [
+            'type' => 'sell',
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 1,
+                    'price' => 700,
+                ],
+            ],
+        ]);
+
+        $transaction = \App\Models\Transaction::firstOrFail();
+
+        $this->actingAs($this->user)
+            ->delete(route('transactions.destroy', $transaction))
+            ->assertRedirect(route('transactions.index'));
+
+        $this->assertDatabaseMissing('transactions', ['id' => $transaction->id]);
+    }
 }

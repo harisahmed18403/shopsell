@@ -34,10 +34,38 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $salesTrend = Transaction::whereIn('type', ['sell', 'repair'])
+            ->select(
+                DB::raw('DATE(created_at) as day'),
+                DB::raw('sum(total_amount) as total')
+            )
+            ->where('created_at', '>=', Carbon::now()->subDays(13)->startOfDay())
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => Carbon::parse($row->day)->format('d M'),
+                'value' => (float) $row->total,
+            ])->values();
+
+        $typeBreakdown = Transaction::select('type', DB::raw('count(*) as count'))
+            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->groupBy('type')
+            ->orderBy('count', 'desc')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => ucfirst($row->type),
+                'value' => (int) $row->count,
+            ])->values();
+
         return Inertia::render('Dashboard', [
             'dailySales' => $dailySales,
             'weeklySales' => $weeklySales,
             'monthlySales' => $monthlySales,
+            'transactionCount' => Transaction::where('created_at', '>=', Carbon::now()->subDays(30))->count(),
+            'averageTicket' => (float) Transaction::whereIn('type', ['sell', 'repair'])->where('created_at', '>=', Carbon::now()->subDays(30))->avg('total_amount'),
+            'salesTrend' => $salesTrend,
+            'typeBreakdown' => $typeBreakdown,
             'recentTransactions' => $recentTransactions->map(fn (Transaction $transaction) => [
                 'id' => $transaction->id,
                 'type' => $transaction->type,
@@ -83,7 +111,21 @@ class DashboardController extends Controller
             ->orderBy('month')
             ->get();
 
+        $topCategories = DB::table('transaction_items')
+            ->join('products', 'transaction_items.product_id', '=', 'products.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->select('categories.name', DB::raw('SUM(transaction_items.quantity) as quantity'))
+            ->groupBy('categories.name')
+            ->orderByDesc('quantity')
+            ->limit(5)
+            ->get();
+
         return Inertia::render('Reports', [
+            'summary' => [
+                'sales' => (float) $monthlyData->sum('total'),
+                'profit' => (float) $profitData->sum('profit'),
+                'repairs' => Transaction::where('type', 'repair')->where('created_at', '>=', Carbon::now()->subMonths(6))->count(),
+            ],
             'monthlyData' => $monthlyData->map(fn ($row) => [
                 'month' => $row->month,
                 'total' => (float) $row->total,
@@ -96,6 +138,10 @@ class DashboardController extends Controller
             'profitData' => $profitData->map(fn ($row) => [
                 'month' => $row->month,
                 'profit' => (float) $row->profit,
+            ])->values(),
+            'topCategories' => $topCategories->map(fn ($row) => [
+                'label' => $row->name,
+                'value' => (int) $row->quantity,
             ])->values(),
         ]);
     }

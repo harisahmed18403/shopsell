@@ -73,6 +73,7 @@
                                             <Link :href="`/products/${product.id}/edit`">
                                                 <Button variant="outline" size="sm">Edit</Button>
                                             </Link>
+                                            <Button variant="ghost" size="sm" @click="destroyProduct(product.id)">Delete</Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -157,5 +158,11 @@ function submitFilters() {
 function resetFilters() {
     filtersForm.reset();
     router.get('/products');
+}
+
+function destroyProduct(id: number) {
+    if (window.confirm('Delete this product?')) {
+        router.delete(`/products/${id}`);
+    }
 }
 </script>

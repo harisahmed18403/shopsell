@@ -57,6 +57,7 @@
                                             <Link :href="`/transactions/${transaction.id}`"><Button variant="ghost" size="sm">Details</Button></Link>
                                             <Link :href="`/transactions/${transaction.id}/edit`"><Button variant="outline" size="sm">Edit</Button></Link>
                                             <a :href="`/transactions/${transaction.id}/invoice`" target="_blank"><Button variant="ghost" size="sm">Invoice</Button></a>
+                                            <Button variant="ghost" size="sm" @click="destroyTransaction(transaction.id)">Delete</Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -110,5 +111,11 @@ function applyFilters() {
 function resetFilters() {
     form.reset();
     router.get('/transactions');
+}
+
+function destroyTransaction(id: number) {
+    if (window.confirm('Delete this transaction?')) {
+        router.delete(`/transactions/${id}`);
+    }
 }
 </script>

@@ -63,4 +63,32 @@ class CustomerTest extends TestCase
                 ->where('customer.name', 'Jane Doe')
             );
     }
+
+    public function test_user_can_filter_customer_index(): void
+    {
+        $user = User::factory()->create();
+        Customer::create(['name' => 'Jane Doe']);
+        Customer::create(['name' => 'John Smith']);
+
+        $this->actingAs($user)
+            ->get(route('customers.index', ['search' => 'Jane']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Customers/Index')
+                ->has('customers', 1)
+                ->where('customers.0.name', 'Jane Doe')
+            );
+    }
+
+    public function test_user_can_delete_customer(): void
+    {
+        $user = User::factory()->create();
+        $customer = Customer::create(['name' => 'Jane Doe']);
+
+        $this->actingAs($user)
+            ->delete(route('customers.destroy', $customer))
+            ->assertRedirect(route('customers.index'));
+
+        $this->assertDatabaseMissing('customers', ['id' => $customer->id]);
+    }
 }
