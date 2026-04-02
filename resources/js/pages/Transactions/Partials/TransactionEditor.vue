@@ -151,6 +151,7 @@ type ItemState = {
 
 const props = defineProps<SharedPageProps & {
     customers: Array<{ id: number; name: string; email: string | null; phone: string | null }>;
+    initialCustomerId?: number | null;
     transaction?: {
         id: number;
         type: string;
@@ -179,7 +180,7 @@ function makeItem(item?: { product_id: number | null; product_name: string | nul
 
 const form = useForm({
     type: props.transaction?.type ?? 'sell',
-    customer_id: props.transaction?.customer_id ? String(props.transaction.customer_id) : '',
+    customer_id: props.transaction?.customer_id ? String(props.transaction.customer_id) : (props.initialCustomerId ? String(props.initialCustomerId) : ''),
     customer_name: props.transaction?.customer_name ?? '',
     customer_email: props.transaction?.customer_email ?? '',
     customer_phone: props.transaction?.customer_phone ?? '',
@@ -204,6 +205,10 @@ function applySelectedCustomer() {
     form.customer_name = customer.name;
     form.customer_email = customer.email ?? '';
     form.customer_phone = customer.phone ?? '';
+}
+
+if (form.customer_id) {
+    applySelectedCustomer();
 }
 
 async function search(index: number) {

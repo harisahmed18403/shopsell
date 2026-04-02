@@ -70,6 +70,17 @@ class TransactionTest extends TestCase
             );
     }
 
+    public function test_transaction_create_page_can_prefill_customer()
+    {
+        $this->actingAs($this->user)
+            ->get(route('transactions.create', ['customer_id' => $this->customer->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Transactions/Create')
+                ->where('initialCustomerId', $this->customer->id)
+            );
+    }
+
     public function test_user_can_create_transaction_with_manual_customer_details()
     {
         $transactionData = [

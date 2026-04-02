@@ -7,6 +7,7 @@
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">{{ customer.name }}</h1>
                 </div>
                 <div class="flex gap-3">
+                    <Link :href="`/transactions/create?customer_id=${customer.id}`"><Button>New transaction</Button></Link>
                     <Link :href="`/customers/${customer.id}/edit`"><Button>Edit</Button></Link>
                     <Link href="/customers"><Button variant="ghost">Back</Button></Link>
                 </div>

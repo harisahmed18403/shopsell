@@ -57,7 +57,7 @@ class TransactionController extends Controller
         ]);
     }
 
-    public function create(): \Illuminate\Http\JsonResponse|Response
+    public function create(Request $request): \Illuminate\Http\JsonResponse|Response
     {
         $customers = Customer::query()->orderBy('name')->get(['id', 'name', 'email', 'phone']);
         if (request()->wantsJson()) {
@@ -66,6 +66,7 @@ class TransactionController extends Controller
 
         return Inertia::render('Transactions/Create', [
             'customers' => $customers,
+            'initialCustomerId' => $request->integer('customer_id') ?: null,
         ]);
     }
 
