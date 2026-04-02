@@ -49,6 +49,14 @@ class InventoryTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('Inventory/Index'));
     }
 
+    public function test_user_can_view_inventory_create_page()
+    {
+        $this->actingAs($this->user)
+            ->get(route('inventory.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Inventory/Create'));
+    }
+
     public function test_user_can_add_item_to_inventory()
     {
         $itemData = [

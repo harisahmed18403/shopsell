@@ -41,7 +41,7 @@ class UserController extends Controller
 
     public function create()
     {
-        return view('admin.users.create');
+        return Inertia::render('Admin/Users/Create');
     }
 
     public function store(Request $request)
@@ -65,7 +65,14 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        return Inertia::render('Admin/Users/Edit', [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+        ]);
     }
 
     public function update(Request $request, User $user)

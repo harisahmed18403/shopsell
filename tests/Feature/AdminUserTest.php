@@ -32,4 +32,34 @@ class AdminUserTest extends TestCase
                 ->where('users.1.name', fn (string $name) => in_array($name, [$superAdmin->name, $listedUser->name], true))
             );
     }
+
+    public function test_super_admin_can_view_create_user_page(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('admin.users.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Admin/Users/Create'));
+    }
+
+    public function test_super_admin_can_view_edit_user_page(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
+        $user = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('admin.users.edit', $user))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/Edit')
+                ->where('user.email', $user->email)
+            );
+    }
 }

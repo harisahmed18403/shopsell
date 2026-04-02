@@ -62,7 +62,7 @@ class InventoryController extends Controller
      */
     public function create()
     {
-        return view('inventory.create');
+        return Inertia::render('Inventory/Create');
     }
 
     /**

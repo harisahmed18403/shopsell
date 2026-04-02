@@ -152,12 +152,14 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $categories = Category::all();
+        $categories = Category::query()->orderBy('name')->get(['id', 'name']);
         if (request()->wantsJson()) {
             return response()->json($categories);
         }
 
-        return view('products.create', compact('categories'));
+        return Inertia::render('Products/Create', [
+            'categories' => $categories,
+        ]);
     }
 
     /**
@@ -225,9 +227,22 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        $categories = Category::all();
+        $categories = Category::query()->orderBy('name')->get(['id', 'name']);
 
-        return view('products.edit', compact('product', 'categories'));
+        return Inertia::render('Products/Edit', [
+            'categories' => $categories,
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'category_id' => $product->category_id,
+                'sale_price' => $product->sale_price,
+                'cash_price' => $product->cash_price,
+                'voucher_price' => $product->voucher_price,
+                'color' => $product->color,
+                'grade' => $product->grade,
+                'description' => $product->description,
+            ],
+        ]);
     }
 
     /**

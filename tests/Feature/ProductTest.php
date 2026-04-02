@@ -60,6 +60,14 @@ class ProductTest extends TestCase
         ]);
     }
 
+    public function test_user_can_view_create_product_page()
+    {
+        $this->actingAs($this->user)
+            ->get(route('products.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Products/Create'));
+    }
+
     public function test_user_can_view_product_detail_page()
     {
         $product = Product::create([
@@ -74,6 +82,22 @@ class ProductTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Products/Show')
                 ->where('product.name', 'iPhone 15')
+            );
+    }
+
+    public function test_user_can_view_edit_product_page()
+    {
+        $product = Product::create([
+            'name' => 'Pixel 9',
+            'category_id' => $this->category->id,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('products.edit', $product))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Products/Edit')
+                ->where('product.name', 'Pixel 9')
             );
     }
 
