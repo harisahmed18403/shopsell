@@ -19,15 +19,22 @@ jobs:
       VPS_USER: root
 
     steps:
-      - name: Configure SSH key
+      - name: Assert deploy key secret exists
         shell: bash
         run: |
           test -n "${{ secrets.VPS_DEPLOY_KEY }}" || { echo "VPS_DEPLOY_KEY is missing"; exit 1; }
+
+      - name: Write deploy key
+        shell: bash
+        run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "${{ secrets.VPS_DEPLOY_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+
+      - name: Validate deploy key format
+        shell: bash
+        run: |
           ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null
-          ssh-keyscan -T 10 -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Run deploy script on VPS
         shell: bash
@@ -35,6 +42,6 @@ jobs:
           ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
+            -o StrictHostKeyChecking=accept-new \
             -p "$VPS_PORT" \
             "$VPS_USER@$VPS_HOST"
