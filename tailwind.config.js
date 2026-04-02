@@ -20,14 +20,5 @@ export default {
 
     plugins: [forms({
         strategy: 'class',
-    }), require('daisyui')],
-
-    daisyui: {
-        themes: [
-            "corporate",
-            "business",
-            "light",
-            "dark",
-        ],
-    },
+    })],
 };
