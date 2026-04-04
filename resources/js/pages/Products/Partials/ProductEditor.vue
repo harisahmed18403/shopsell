@@ -8,7 +8,7 @@
                         {{ mode === 'create' ? 'Add product' : `Edit ${product?.name}` }}
                     </h1>
                 </div>
-                <Link href="/products">
+                <Link :href="appPath(app.base_path, '/products')">
                     <Button variant="ghost">Cancel</Button>
                 </Link>
             </div>
@@ -70,6 +70,7 @@
 import { Link, useForm } from '@inertiajs/vue3';
 
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -108,10 +109,10 @@ const form = useForm({
 
 function submit() {
     if (props.mode === 'create') {
-        form.post('/products');
+        form.post(appPath(props.app.base_path, '/products'));
         return;
     }
 
-    form.patch(`/products/${props.product?.id}`);
+    form.patch(appPath(props.app.base_path, `/products/${props.product?.id}`));
 }
 </script>

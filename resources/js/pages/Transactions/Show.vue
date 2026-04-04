@@ -7,8 +7,8 @@
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">{{ transaction.receipt_number || `#${transaction.id}` }}</h1>
                 </div>
                 <div class="flex gap-3">
-                    <a :href="`/transactions/${transaction.id}/invoice`" target="_blank"><Button>Invoice</Button></a>
-                    <Link href="/transactions"><Button variant="ghost">Back</Button></Link>
+                    <a :href="appPath(app.base_path, `/transactions/${transaction.id}/invoice`)" target="_blank"><Button>Invoice</Button></a>
+                    <Link :href="appPath(app.base_path, '/transactions')"><Button variant="ghost">Back</Button></Link>
                 </div>
             </div>
 
@@ -107,6 +107,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';

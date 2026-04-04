@@ -17,6 +17,7 @@ export interface SharedPageProps {
     app: {
         name: string;
         url: string;
+        base_path: string;
     };
     auth: {
         user: AuthUser | null;

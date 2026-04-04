@@ -1,5 +1,5 @@
 <template>
-    <GuestLayout :app-name="app.name">
+    <GuestLayout :app-name="app.name" :base-path="app.base_path">
         <AuthPanel eyebrow="Verification" title="Confirm your email" description="Check your inbox before continuing into the application.">
             <div class="space-y-5 text-sm text-slate-300">
                 <p>
@@ -9,10 +9,10 @@
                     A fresh verification link has been sent.
                 </p>
                 <div class="flex flex-wrap items-center gap-3">
-                    <Button :disabled="verificationForm.processing" @click="verificationForm.post('/email/verification-notification')">
+                    <Button :disabled="verificationForm.processing" @click="verificationForm.post(appPath(app.base_path, '/email/verification-notification'))">
                         Resend verification link
                     </Button>
-                    <Button variant="ghost" :disabled="logoutForm.processing" @click="logoutForm.post('/logout')">
+                    <Button variant="ghost" :disabled="logoutForm.processing" @click="logoutForm.post(appPath(app.base_path, '/logout'))">
                         Log out
                     </Button>
                 </div>
@@ -25,6 +25,7 @@
 import { useForm } from '@inertiajs/vue3';
 
 import AuthPanel from '@/components/app/AuthPanel.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import GuestLayout from '@/layouts/GuestLayout.vue';
 import type { SharedPageProps } from '@/types';

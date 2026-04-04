@@ -6,7 +6,7 @@
                     <p class="text-sm uppercase tracking-[0.35em] text-rose-300">Transactions</p>
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">Ledger</h1>
                 </div>
-                <Link href="/transactions/create"><Button>New transaction</Button></Link>
+                <Link :href="appPath(app.base_path, '/transactions/create')"><Button>New transaction</Button></Link>
             </div>
 
             <Card class="border-white/10 bg-slate-900/80">
@@ -66,9 +66,9 @@
                                     <td class="px-6 py-4">{{ transaction.payment_method || 'N/A' }}</td>
                                     <td class="px-6 py-4">
                                         <div class="flex justify-end gap-2">
-                                            <Link :href="`/transactions/${transaction.id}`"><Button variant="ghost" size="sm">Details</Button></Link>
-                                            <Link :href="`/transactions/${transaction.id}/edit`"><Button variant="outline" size="sm">Edit</Button></Link>
-                                            <a :href="`/transactions/${transaction.id}/invoice`" target="_blank"><Button variant="ghost" size="sm">Invoice</Button></a>
+                                            <Link :href="appPath(app.base_path, `/transactions/${transaction.id}`)"><Button variant="ghost" size="sm">Details</Button></Link>
+                                            <Link :href="appPath(app.base_path, `/transactions/${transaction.id}/edit`)"><Button variant="outline" size="sm">Edit</Button></Link>
+                                            <a :href="appPath(app.base_path, `/transactions/${transaction.id}/invoice`)" target="_blank"><Button variant="ghost" size="sm">Invoice</Button></a>
                                             <Button variant="ghost" size="sm" @click="destroyTransaction(transaction.id)">Delete</Button>
                                         </div>
                                     </td>
@@ -94,6 +94,7 @@
 import { Link, router, useForm } from '@inertiajs/vue3';
 
 import PaginationNav from '@/components/app/PaginationNav.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -120,17 +121,17 @@ const props = defineProps<SharedPageProps & {
 const form = useForm({ search: props.filters.search, type: props.filters.type, status: props.filters.status });
 
 function applyFilters() {
-    router.get('/transactions', { search: form.search || undefined, type: form.type || undefined, status: form.status || undefined }, { preserveState: true, replace: true });
+    router.get(appPath(props.app.base_path, '/transactions'), { search: form.search || undefined, type: form.type || undefined, status: form.status || undefined }, { preserveState: true, replace: true });
 }
 
 function resetFilters() {
     form.reset();
-    router.get('/transactions');
+    router.get(appPath(props.app.base_path, '/transactions'));
 }
 
 function destroyTransaction(id: number) {
     if (window.confirm('Delete this transaction?')) {
-        router.delete(`/transactions/${id}`);
+        router.delete(appPath(props.app.base_path, `/transactions/${id}`));
     }
 }
 </script>

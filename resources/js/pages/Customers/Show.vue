@@ -7,9 +7,9 @@
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">{{ customer.name }}</h1>
                 </div>
                 <div class="flex gap-3">
-                    <Link :href="`/transactions/create?customer_id=${customer.id}`"><Button>New transaction</Button></Link>
-                    <Link :href="`/customers/${customer.id}/edit`"><Button>Edit</Button></Link>
-                    <Link href="/customers"><Button variant="ghost">Back</Button></Link>
+                    <Link :href="appPath(app.base_path, `/transactions/create?customer_id=${customer.id}`)"><Button>New transaction</Button></Link>
+                    <Link :href="appPath(app.base_path, `/customers/${customer.id}/edit`)"><Button>Edit</Button></Link>
+                    <Link :href="appPath(app.base_path, '/customers')"><Button variant="ghost">Back</Button></Link>
                 </div>
             </div>
 
@@ -82,7 +82,7 @@
                                 <tbody class="divide-y divide-white/5">
                                     <tr v-for="transaction in customer.transactions" :key="transaction.id" class="text-sm text-slate-200">
                                         <td class="px-4 py-4">
-                                            <Link :href="`/transactions/${transaction.id}`" class="font-mono text-rose-300 hover:underline">
+                                            <Link :href="appPath(app.base_path, `/transactions/${transaction.id}`)" class="font-mono text-rose-300 hover:underline">
                                                 {{ transaction.receipt_number || `#${transaction.id}` }}
                                             </Link>
                                         </td>
@@ -109,6 +109,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';

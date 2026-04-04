@@ -31,13 +31,14 @@
 </template>
 
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 import AppLogo from '@/components/app/AppLogo.vue';
 import FlashMessages from '@/components/app/FlashMessages.vue';
+import { appPath } from '@/lib/app-path';
 import { cn } from '@/lib/utils';
-import type { FlashMessages as FlashMessageBag } from '@/types';
+import type { FlashMessages as FlashMessageBag, SharedPageProps } from '@/types';
 
 const props = defineProps<{
     appName: string;
@@ -45,15 +46,17 @@ const props = defineProps<{
     flash: FlashMessageBag;
     isSuperAdmin?: boolean;
 }>();
+const page = usePage<SharedPageProps>();
+const basePath = computed(() => page.props.app.base_path);
 
 const navigation = computed(() => [
-    { label: 'Dashboard', href: '/dashboard', route: 'dashboard' },
-    { label: 'Reports', href: '/reports', route: 'reports' },
-    { label: 'Products', href: '/products', route: 'products.index' },
-    { label: 'Inventory', href: '/inventory', route: 'inventory.index' },
-    { label: 'Transactions', href: '/transactions', route: 'transactions.index' },
-    { label: 'Customers', href: '/customers', route: 'customers.index' },
-    ...(props.isSuperAdmin ? [{ label: 'Admin', href: '/admin/users', route: 'admin.users.index' }] : []),
-    { label: 'Profile', href: '/profile', route: 'profile.edit' },
+    { label: 'Dashboard', href: appPath(basePath.value, '/dashboard'), route: 'dashboard' },
+    { label: 'Reports', href: appPath(basePath.value, '/reports'), route: 'reports' },
+    { label: 'Products', href: appPath(basePath.value, '/products'), route: 'products.index' },
+    { label: 'Inventory', href: appPath(basePath.value, '/inventory'), route: 'inventory.index' },
+    { label: 'Transactions', href: appPath(basePath.value, '/transactions'), route: 'transactions.index' },
+    { label: 'Customers', href: appPath(basePath.value, '/customers'), route: 'customers.index' },
+    ...(props.isSuperAdmin ? [{ label: 'Admin', href: appPath(basePath.value, '/admin/users'), route: 'admin.users.index' }] : []),
+    { label: 'Profile', href: appPath(basePath.value, '/profile'), route: 'profile.edit' },
 ]);
 </script>

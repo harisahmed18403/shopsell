@@ -8,7 +8,7 @@
                         {{ mode === 'create' ? 'Add stock item' : `Edit stock #${item?.id}` }}
                     </h1>
                 </div>
-                <Link href="/inventory">
+                <Link :href="appPath(app.base_path, '/inventory')">
                     <Button variant="ghost">Cancel</Button>
                 </Link>
             </div>
@@ -64,6 +64,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import ProductSearchSelect, { type SearchProduct } from '@/components/app/ProductSearchSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -106,10 +107,10 @@ watch(selectedProduct, (product) => {
 
 function submit() {
     if (props.mode === 'create') {
-        form.post('/inventory');
+        form.post(appPath(props.app.base_path, '/inventory'));
         return;
     }
 
-    form.put(`/inventory/${props.item?.id}`);
+    form.put(appPath(props.app.base_path, `/inventory/${props.item?.id}`));
 }
 </script>

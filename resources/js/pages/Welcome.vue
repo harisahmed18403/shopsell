@@ -1,5 +1,5 @@
 <template>
-    <GuestLayout :app-name="app.name">
+    <GuestLayout :app-name="app.name" :base-path="app.base_path">
         <section class="grid w-full gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
             <div class="space-y-6">
                 <p class="text-sm uppercase tracking-[0.4em] text-rose-300">
@@ -14,16 +14,16 @@
                 <div class="flex flex-wrap gap-4">
                     <Link
                         v-if="auth.user"
-                        href="/dashboard"
+                        :href="appPath(app.base_path, '/dashboard')"
                         class="rounded-full bg-rose-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
                     >
                         Open dashboard
                     </Link>
                     <template v-else>
-                        <Link href="/register" class="rounded-full bg-rose-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">
+                        <Link :href="appPath(app.base_path, '/register')" class="rounded-full bg-rose-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">
                             Start account
                         </Link>
-                        <Link href="/login" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/20 hover:bg-white/5">
+                        <Link :href="appPath(app.base_path, '/login')" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/20 hover:bg-white/5">
                             Sign in
                         </Link>
                     </template>
@@ -49,11 +49,13 @@
 import { Link } from '@inertiajs/vue3';
 
 import GuestLayout from '@/layouts/GuestLayout.vue';
+import { appPath } from '@/lib/app-path';
 import type { AuthUser } from '@/types';
 
 defineProps<{
     app: {
         name: string;
+        base_path: string;
     };
     auth: {
         user: AuthUser | null;

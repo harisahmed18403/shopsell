@@ -12,7 +12,7 @@
                     </div>
                     <Button @click="applyFilters">Search</Button>
                     <Button variant="ghost" @click="resetFilters">Reset</Button>
-                    <Link href="/customers/create">
+                    <Link :href="appPath(app.base_path, '/customers/create')">
                         <Button>Add customer</Button>
                     </Link>
                 </div>
@@ -45,8 +45,8 @@
                                     <td class="px-6 py-4 font-medium text-white">{{ formatCurrency(customer.lifetime_value) }}</td>
                                     <td class="px-6 py-4">
                                         <div class="flex justify-end gap-2">
-                                            <Link :href="`/customers/${customer.id}`"><Button variant="ghost" size="sm">View</Button></Link>
-                                            <Link :href="`/customers/${customer.id}/edit`"><Button variant="outline" size="sm">Edit</Button></Link>
+                                            <Link :href="appPath(app.base_path, `/customers/${customer.id}`)"><Button variant="ghost" size="sm">View</Button></Link>
+                                            <Link :href="appPath(app.base_path, `/customers/${customer.id}/edit`)"><Button variant="outline" size="sm">Edit</Button></Link>
                                             <Button variant="ghost" size="sm" @click="destroyCustomer(customer.id)">Delete</Button>
                                         </div>
                                     </td>
@@ -72,6 +72,7 @@
 import { Link, router, useForm } from '@inertiajs/vue3';
 
 import PaginationNav from '@/components/app/PaginationNav.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -104,17 +105,17 @@ const form = useForm({
 });
 
 function applyFilters() {
-    router.get('/customers', { search: form.search || undefined }, { preserveState: true, replace: true });
+    router.get(appPath(props.app.base_path, '/customers'), { search: form.search || undefined }, { preserveState: true, replace: true });
 }
 
 function resetFilters() {
     form.reset();
-    router.get('/customers');
+    router.get(appPath(props.app.base_path, '/customers'));
 }
 
 function destroyCustomer(id: number) {
     if (window.confirm('Delete this customer record?')) {
-        router.delete(`/customers/${id}`);
+        router.delete(appPath(props.app.base_path, `/customers/${id}`));
     }
 }
 </script>

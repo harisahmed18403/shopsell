@@ -6,7 +6,7 @@
                     <p class="text-sm uppercase tracking-[0.35em] text-rose-300">Admin</p>
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">Users</h1>
                 </div>
-                <Link href="/admin/users/create">
+                <Link :href="appPath(app.base_path, '/admin/users/create')">
                     <Button>New user</Button>
                 </Link>
             </div>
@@ -36,7 +36,7 @@
                                     <td class="px-6 py-4 text-xs text-slate-400">{{ formatDate(user.created_at) }}</td>
                                     <td class="px-6 py-4">
                                         <div class="flex justify-end gap-2">
-                                            <Link :href="`/admin/users/${user.id}/edit`">
+                                            <Link :href="appPath(app.base_path, `/admin/users/${user.id}/edit`)">
                                                 <Button variant="outline" size="sm">Edit</Button>
                                             </Link>
                                             <Button v-if="user.can_delete" variant="ghost" size="sm" @click="removeUser(user.id)">
@@ -68,6 +68,7 @@
 import { Link, router } from '@inertiajs/vue3';
 
 import PaginationNav from '@/components/app/PaginationNav.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -95,7 +96,7 @@ defineProps<SharedPageProps & {
 
 function removeUser(id: number) {
     if (window.confirm('Are you sure you want to delete this user?')) {
-        router.delete(`/admin/users/${id}`);
+        router.delete(appPath(props.app.base_path, `/admin/users/${id}`));
     }
 }
 </script>

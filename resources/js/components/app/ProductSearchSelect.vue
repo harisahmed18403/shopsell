@@ -38,10 +38,13 @@
 </template>
 
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Input } from '@/components/ui/input';
+import type { SharedPageProps } from '@/types';
 
 export interface SearchProduct {
     id: number;
@@ -55,6 +58,7 @@ export interface SearchProduct {
 const props = defineProps<{
     modelValue: SearchProduct | null;
 }>();
+const page = usePage<SharedPageProps>();
 
 const emit = defineEmits<{
     (e: 'update:modelValue', product: SearchProduct | null): void;
@@ -91,7 +95,7 @@ watch(query, (value) => {
         loading.value = true;
 
         try {
-            const response = await fetch(`/products/search?q=${encodeURIComponent(value)}`, {
+            const response = await fetch(appPath(page.props.app.base_path, `/products/search?q=${encodeURIComponent(value)}`), {
                 signal: controller.signal,
                 headers: {
                     Accept: 'application/json',

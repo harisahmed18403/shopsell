@@ -8,7 +8,7 @@
                         {{ mode === 'create' ? 'New transaction' : `Edit #${transaction?.id}` }}
                     </h1>
                 </div>
-                <Link href="/transactions"><Button variant="ghost">Cancel</Button></Link>
+                <Link :href="appPath(app.base_path, '/transactions')"><Button variant="ghost">Cancel</Button></Link>
             </div>
 
             <form class="space-y-6" @submit.prevent="submit">
@@ -170,6 +170,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -327,7 +328,7 @@ async function search(index: number) {
         return;
     }
 
-    const response = await fetch(`/products/search?q=${encodeURIComponent(item.search)}`, { headers: { Accept: 'application/json' } });
+    const response = await fetch(appPath(props.app.base_path, `/products/search?q=${encodeURIComponent(item.search)}`), { headers: { Accept: 'application/json' } });
     item.searchResults = await response.json();
     item.showResults = true;
 }
@@ -376,10 +377,10 @@ function submit() {
     };
 
     if (props.mode === 'create') {
-        form.transform(() => payload).post('/transactions');
+        form.transform(() => payload).post(appPath(props.app.base_path, '/transactions'));
         return;
     }
 
-    form.transform(() => payload).put(`/transactions/${props.transaction?.id}`);
+    form.transform(() => payload).put(appPath(props.app.base_path, `/transactions/${props.transaction?.id}`));
 }
 </script>

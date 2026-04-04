@@ -1,7 +1,7 @@
 <template>
-    <GuestLayout :app-name="app.name">
+    <GuestLayout :app-name="app.name" :base-path="app.base_path">
         <AuthPanel eyebrow="Recovery" title="Reset password" description="Request a password reset link for your account.">
-            <form class="space-y-5" @submit.prevent="form.post('/forgot-password')">
+            <form class="space-y-5" @submit.prevent="form.post(appPath(app.base_path, '/forgot-password'))">
                 <FormField
                     id="email"
                     label="Email"
@@ -12,7 +12,7 @@
                 </FormField>
 
                 <div class="flex items-center justify-between gap-4">
-                    <Link href="/login" class="text-sm text-slate-300 underline underline-offset-4">
+                    <Link :href="appPath(app.base_path, '/login')" class="text-sm text-slate-300 underline underline-offset-4">
                         Back to sign in
                     </Link>
                     <Button type="submit" :disabled="form.processing">
@@ -29,6 +29,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 
 import AuthPanel from '@/components/app/AuthPanel.vue';
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import GuestLayout from '@/layouts/GuestLayout.vue';

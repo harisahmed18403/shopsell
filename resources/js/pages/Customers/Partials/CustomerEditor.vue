@@ -6,7 +6,7 @@
                     <p class="text-sm uppercase tracking-[0.35em] text-rose-300">Customers</p>
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">{{ mode === 'create' ? 'Add customer' : `Edit ${customer?.name}` }}</h1>
                 </div>
-                <Link href="/customers"><Button variant="ghost">Cancel</Button></Link>
+                <Link :href="appPath(app.base_path, '/customers')"><Button variant="ghost">Cancel</Button></Link>
             </div>
 
             <Card class="mx-auto max-w-3xl border-white/10 bg-slate-900/80">
@@ -40,6 +40,7 @@
 import { Link, useForm } from '@inertiajs/vue3';
 
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -60,10 +61,10 @@ const form = useForm({
 
 function submit() {
     if (props.mode === 'create') {
-        form.post('/customers');
+        form.post(appPath(props.app.base_path, '/customers'));
         return;
     }
 
-    form.patch(`/customers/${props.customer?.id}`);
+    form.patch(appPath(props.app.base_path, `/customers/${props.customer?.id}`));
 }
 </script>

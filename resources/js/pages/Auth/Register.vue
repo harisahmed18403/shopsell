@@ -1,7 +1,7 @@
 <template>
-    <GuestLayout :app-name="app.name">
+    <GuestLayout :app-name="app.name" :base-path="app.base_path">
         <AuthPanel eyebrow="Create account" title="Open a workspace" description="Register a new operator account for ShopSell.">
-            <form class="space-y-5" @submit.prevent="form.post('/register')">
+            <form class="space-y-5" @submit.prevent="form.post(appPath(app.base_path, '/register'))">
                 <FormField id="name" label="Name" :error="errors.name as string">
                     <Input id="name" v-model="form.name" type="text" class="border-white/10 bg-white/5 text-white" />
                 </FormField>
@@ -19,7 +19,7 @@
                 </FormField>
 
                 <div class="flex items-center justify-between gap-4">
-                    <Link href="/login" class="text-sm text-slate-300 underline underline-offset-4">
+                    <Link :href="appPath(app.base_path, '/login')" class="text-sm text-slate-300 underline underline-offset-4">
                         Already registered?
                     </Link>
                     <Button type="submit" :disabled="form.processing">
@@ -36,6 +36,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 
 import AuthPanel from '@/components/app/AuthPanel.vue';
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import GuestLayout from '@/layouts/GuestLayout.vue';

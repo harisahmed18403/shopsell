@@ -6,7 +6,7 @@
                     <p class="text-sm uppercase tracking-[0.35em] text-rose-300">Products</p>
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">Catalog</h1>
                 </div>
-                <Link href="/products/create">
+                <Link :href="appPath(app.base_path, '/products/create')">
                     <Button>Add product</Button>
                 </Link>
             </div>
@@ -67,10 +67,10 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex justify-end gap-2">
-                                            <Link :href="`/products/${product.id}`">
+                                            <Link :href="appPath(app.base_path, `/products/${product.id}`)">
                                                 <Button variant="ghost" size="sm">View</Button>
                                             </Link>
-                                            <Link :href="`/products/${product.id}/edit`">
+                                            <Link :href="appPath(app.base_path, `/products/${product.id}/edit`)">
                                                 <Button variant="outline" size="sm">Edit</Button>
                                             </Link>
                                             <Button variant="ghost" size="sm" @click="destroyProduct(product.id)">Delete</Button>
@@ -102,6 +102,7 @@
 import { Link, router, useForm } from '@inertiajs/vue3';
 
 import PaginationNav from '@/components/app/PaginationNav.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -146,7 +147,7 @@ const filtersForm = useForm({
 });
 
 function submitFilters() {
-    router.get('/products', {
+    router.get(appPath(props.app.base_path, '/products'), {
         search: filtersForm.search || undefined,
         category_id: filtersForm.category_id || undefined,
     }, {
@@ -157,12 +158,12 @@ function submitFilters() {
 
 function resetFilters() {
     filtersForm.reset();
-    router.get('/products');
+    router.get(appPath(props.app.base_path, '/products'));
 }
 
 function destroyProduct(id: number) {
     if (window.confirm('Delete this product?')) {
-        router.delete(`/products/${id}`);
+        router.delete(appPath(props.app.base_path, `/products/${id}`));
     }
 }
 </script>

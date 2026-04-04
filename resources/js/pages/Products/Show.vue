@@ -7,10 +7,10 @@
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">{{ product.name }}</h1>
                 </div>
                 <div class="flex gap-3">
-                    <Link :href="`/products/${product.id}/edit`">
+                    <Link :href="appPath(app.base_path, `/products/${product.id}/edit`)">
                         <Button>Edit</Button>
                     </Link>
-                    <Link href="/products">
+                    <Link :href="appPath(app.base_path, '/products')">
                         <Button variant="ghost">Back</Button>
                     </Link>
                 </div>
@@ -117,6 +117,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';

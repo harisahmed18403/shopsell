@@ -8,7 +8,7 @@
                         {{ mode === 'create' ? 'Create user' : `Edit ${user?.name}` }}
                     </h1>
                 </div>
-                <Link href="/admin/users">
+                <Link :href="appPath(app.base_path, '/admin/users')">
                     <Button variant="ghost">Cancel</Button>
                 </Link>
             </div>
@@ -57,6 +57,7 @@
 import { Link, useForm } from '@inertiajs/vue3';
 
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -83,10 +84,10 @@ const form = useForm({
 
 function submit() {
     if (props.mode === 'create') {
-        form.post('/admin/users');
+        form.post(appPath(props.app.base_path, '/admin/users'));
         return;
     }
 
-    form.patch(`/admin/users/${props.user?.id}`);
+    form.patch(appPath(props.app.base_path, `/admin/users/${props.user?.id}`));
 }
 </script>

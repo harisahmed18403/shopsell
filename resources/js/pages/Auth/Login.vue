@@ -1,7 +1,7 @@
 <template>
-    <GuestLayout :app-name="app.name">
+    <GuestLayout :app-name="app.name" :base-path="app.base_path">
         <AuthPanel eyebrow="Access" title="Sign in" description="Use your existing ShopSell account to continue.">
-            <form class="space-y-5" @submit.prevent="form.post('/login')">
+            <form class="space-y-5" @submit.prevent="form.post(appPath(app.base_path, '/login'))">
                 <FormField id="email" label="Email" :error="errors.email as string">
                     <Input id="email" v-model="form.email" type="email" class="border-white/10 bg-white/5 text-white" />
                 </FormField>
@@ -19,7 +19,7 @@
                     <Button type="submit" :disabled="form.processing">
                         Sign in
                     </Button>
-                    <Link href="/forgot-password" class="text-sm text-slate-300 underline underline-offset-4">
+                    <Link :href="appPath(app.base_path, '/forgot-password')" class="text-sm text-slate-300 underline underline-offset-4">
                         Forgot password?
                     </Link>
                 </div>
@@ -33,6 +33,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 
 import AuthPanel from '@/components/app/AuthPanel.vue';
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import GuestLayout from '@/layouts/GuestLayout.vue';

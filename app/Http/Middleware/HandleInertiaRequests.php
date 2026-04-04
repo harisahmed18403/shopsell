@@ -40,6 +40,7 @@ class HandleInertiaRequests extends Middleware
             'app' => [
                 'name' => config('app.name'),
                 'url' => $request->getSchemeAndHttpHost(),
+                'base_path' => rtrim((string) parse_url((string) config('app.url'), PHP_URL_PATH), '/') ?: '',
             ],
             'auth' => [
                 'user' => $request->user() ? [

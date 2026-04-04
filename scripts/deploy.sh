@@ -32,6 +32,10 @@ php artisan route:cache
 php artisan view:cache
 php artisan queue:restart || true
 
+install -m 644 deploy/apache/phoneworks.conf /etc/apache2/sites-available/phoneworks.conf
+apachectl configtest
+systemctl reload apache2
+
 chown -R www-data:www-data storage bootstrap/cache database
 find storage bootstrap/cache database -type d -exec chmod 775 {} \;
 find storage bootstrap/cache database -type f -exec chmod 664 {} \;

@@ -6,7 +6,7 @@
                     <p class="text-sm uppercase tracking-[0.35em] text-rose-300">Inventory</p>
                     <h1 class="font-display text-4xl font-semibold tracking-tight text-white">Physical stock</h1>
                 </div>
-                <Link href="/inventory/create">
+                <Link :href="appPath(app.base_path, '/inventory/create')">
                     <Button>Add new item</Button>
                 </Link>
             </div>
@@ -55,7 +55,7 @@
                                     <td class="px-6 py-4 text-xs text-slate-400">{{ formatDate(item.created_at) }}</td>
                                     <td class="px-6 py-4">
                                         <div class="flex justify-end gap-2">
-                                            <Link :href="`/inventory/${item.id}/edit`">
+                                            <Link :href="appPath(app.base_path, `/inventory/${item.id}/edit`)">
                                                 <Button variant="outline" size="sm">
                                                     Edit
                                                 </Button>
@@ -89,6 +89,7 @@
 import { Link, router, useForm } from '@inertiajs/vue3';
 
 import PaginationNav from '@/components/app/PaginationNav.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -126,7 +127,7 @@ const searchForm = useForm({
 });
 
 function submitFilters() {
-    router.get('/inventory', {
+    router.get(appPath(props.app.base_path, '/inventory'), {
         search: searchForm.search || undefined,
     }, {
         preserveState: true,
@@ -136,12 +137,12 @@ function submitFilters() {
 
 function resetFilters() {
     searchForm.reset();
-    router.get('/inventory');
+    router.get(appPath(props.app.base_path, '/inventory'));
 }
 
 function removeItem(id: number) {
     if (window.confirm('Remove this item from inventory?')) {
-        router.delete(`/inventory/${id}`);
+        router.delete(appPath(props.app.base_path, `/inventory/${id}`));
     }
 }
 </script>

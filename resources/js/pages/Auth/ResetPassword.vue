@@ -1,7 +1,7 @@
 <template>
-    <GuestLayout :app-name="app.name">
+    <GuestLayout :app-name="app.name" :base-path="app.base_path">
         <AuthPanel eyebrow="Recovery" title="Choose a new password" description="Complete the password reset with the token from your email.">
-            <form class="space-y-5" @submit.prevent="form.post('/reset-password')">
+            <form class="space-y-5" @submit.prevent="form.post(appPath(app.base_path, '/reset-password'))">
                 <FormField id="email" label="Email" :error="errors.email as string">
                     <Input id="email" v-model="form.email" type="email" class="border-white/10 bg-white/5 text-white" />
                 </FormField>
@@ -27,6 +27,7 @@ import { useForm } from '@inertiajs/vue3';
 
 import AuthPanel from '@/components/app/AuthPanel.vue';
 import FormField from '@/components/app/FormField.vue';
+import { appPath } from '@/lib/app-path';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import GuestLayout from '@/layouts/GuestLayout.vue';
