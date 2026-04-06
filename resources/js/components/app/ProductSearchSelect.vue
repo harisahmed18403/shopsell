@@ -16,15 +16,32 @@
                         v-for="product in results"
                         :key="product.id"
                         type="button"
-                        class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-white/5"
+                        class="flex w-full flex-col gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-white/5"
                         @click="selectProduct(product)"
                     >
-                        <div class="h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-white">
-                            <img :src="product.image_url" :alt="product.name" class="h-full w-full object-contain" />
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-white">
+                                <img :src="resolvedImageUrl(product.image_url)" :alt="product.name" class="h-full w-full object-contain" @error="handleImageError" />
+                            </div>
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-medium text-white">{{ product.name }}</p>
+                                <p class="text-xs text-slate-500">ID {{ product.id }}</p>
+                            </div>
                         </div>
-                        <div class="min-w-0">
-                            <p class="truncate text-sm font-medium text-white">{{ product.name }}</p>
-                            <p class="text-xs text-slate-500">ID {{ product.id }}</p>
+
+                        <div v-if="product.variants?.length" class="flex flex-wrap gap-2 pl-[3.25rem]">
+                            <div
+                                v-for="variant in product.variants"
+                                :key="variant.grade"
+                                class="min-w-[72px] rounded-lg border border-white/10 bg-white/5 px-2 py-1"
+                            >
+                                <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                                    {{ variant.grade || 'N/A' }}
+                                </p>
+                                <p class="mt-1 text-[11px] text-sky-300">S: {{ formatVariantPrice(variant.sale) }}</p>
+                                <p class="text-[11px] text-rose-300">C: {{ formatVariantPrice(variant.cash) }}</p>
+                                <p class="text-[11px] text-amber-300">V: {{ formatVariantPrice(variant.voucher) }}</p>
+                            </div>
                         </div>
                     </button>
 
@@ -49,9 +66,12 @@ import type { SharedPageProps } from '@/types';
 export interface SearchProduct {
     id: number;
     name: string;
-    image_url: string;
+    image_url: string | null;
     variants?: Array<{
+        grade?: string;
         sale?: number;
+        cash?: number;
+        voucher?: number;
     }>;
 }
 
@@ -72,6 +92,7 @@ const selectedProduct = computed(() => props.modelValue);
 let controller: AbortController | null = null;
 let timeoutId: number | null = null;
 let suppressNextSearch = false;
+const fallbackImage = 'https://via.placeholder.com/150';
 
 watch(query, (value) => {
     if (suppressNextSearch) {
@@ -119,6 +140,27 @@ function selectProduct(product: SearchProduct) {
     suppressNextSearch = true;
     query.value = product.name;
     showDropdown.value = false;
+}
+
+function resolvedImageUrl(imageUrl: string | null) {
+    return imageUrl || fallbackImage;
+}
+
+function handleImageError(event: Event) {
+    const image = event.target as HTMLImageElement | null;
+    if (!image || image.src === fallbackImage) {
+        return;
+    }
+
+    image.src = fallbackImage;
+}
+
+function formatVariantPrice(value?: number) {
+    return new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        maximumFractionDigits: 0,
+    }).format(value ?? 0);
 }
 
 onBeforeUnmount(() => {
