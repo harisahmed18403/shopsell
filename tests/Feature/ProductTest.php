@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\CexProduct;
 use App\Models\Product;
 use App\Models\ProductLine;
 use App\Models\SuperCategory;
@@ -123,5 +124,165 @@ class ProductTest extends TestCase
                 ->has('products', 1)
                 ->where('products.0.name', 'Apple iPhone')
             );
+    }
+
+    public function test_products_index_search_matches_multiple_name_tokens()
+    {
+        Product::create([
+            'name' => 'Apple iPhone 16 128GB Pink',
+            'category_id' => $this->category->id,
+            'sale_price' => 899,
+        ]);
+
+        Product::create([
+            'name' => 'Apple iPhone 16 128GB Black',
+            'category_id' => $this->category->id,
+            'sale_price' => 899,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('products.index', ['search' => '16 128 pink']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Products/Index')
+                ->has('products', 1)
+                ->where('products.0.name', 'Apple iPhone 16 128GB Pink')
+            );
+    }
+
+    public function test_products_index_prioritises_matching_grade_tokens()
+    {
+        Product::create([
+            'name' => 'Apple iPhone 16 128GB Pink',
+            'category_id' => $this->category->id,
+            'sale_price' => 899,
+            'grade' => 'B',
+        ]);
+
+        Product::create([
+            'name' => 'Apple iPhone 16 128GB Pink',
+            'category_id' => $this->category->id,
+            'sale_price' => 899,
+            'grade' => 'A',
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('products.index', ['search' => '16 128 pink A']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Products/Index')
+                ->where('products.0.grade', 'A')
+            );
+    }
+
+    public function test_products_index_includes_grade_and_grouped_cex_variants()
+    {
+        $product = Product::create([
+            'name' => 'iPhone 15 Pro',
+            'category_id' => $this->category->id,
+            'sale_price' => 999,
+            'grade' => 'B',
+        ]);
+
+        CexProduct::create([
+            'product_id' => $product->id,
+            'cex_id' => 'iphone-15-pro-a-low',
+            'name' => 'iPhone 15 Pro Grade A',
+            'grade' => 'A',
+            'sale_price' => 950,
+            'cash_price' => 700,
+            'voucher_price' => 780,
+        ]);
+
+        CexProduct::create([
+            'product_id' => $product->id,
+            'cex_id' => 'iphone-15-pro-a-high',
+            'name' => 'iPhone 15 Pro Grade A High',
+            'grade' => 'A',
+            'sale_price' => 975,
+            'cash_price' => 720,
+            'voucher_price' => 790,
+        ]);
+
+        CexProduct::create([
+            'product_id' => $product->id,
+            'cex_id' => 'iphone-15-pro-c',
+            'name' => 'iPhone 15 Pro Grade C',
+            'grade' => 'C',
+            'sale_price' => 840,
+            'cash_price' => 620,
+            'voucher_price' => 680,
+        ]);
+
+        CexProduct::create([
+            'product_id' => $product->id,
+            'cex_id' => 'iphone-15-pro-b',
+            'name' => 'iPhone 15 Pro Grade B',
+            'grade' => 'B',
+            'sale_price' => 900,
+            'cash_price' => 660,
+            'voucher_price' => 730,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('products.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Products/Index')
+                ->where('products.0.grade', 'B')
+                ->where('products.0.cex_variants.0.grade', 'A')
+                ->where('products.0.cex_variants.0.sale_price', 975)
+                ->where('products.0.cex_variants.1.grade', 'B')
+                ->where('products.0.cex_variants.2.grade', 'C')
+            );
+    }
+
+    public function test_product_search_matches_color_tokens_alongside_name_tokens()
+    {
+        $product = Product::create([
+            'name' => 'iPhone 16 128GB',
+            'category_id' => $this->category->id,
+            'sale_price' => 899,
+            'color' => 'Pink',
+        ]);
+
+        CexProduct::create([
+            'product_id' => $product->id,
+            'cex_id' => 'iphone-16-128-pink',
+            'name' => 'iPhone 16 128GB Pink',
+            'grade' => 'B',
+            'sale_price' => 850,
+            'cash_price' => 620,
+            'voucher_price' => 700,
+        ]);
+
+        $this->actingAs($this->user)
+            ->getJson(route('products.search', ['q' => '16 128 pink']))
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $product->id)
+            ->assertJsonPath('0.name', 'iPhone 16 128GB');
+    }
+
+    public function test_product_search_prioritises_matching_grade_tokens()
+    {
+        Product::create([
+            'name' => 'Apple iPhone 16 128GB Pink',
+            'category_id' => $this->category->id,
+            'sale_price' => 899,
+            'grade' => 'B',
+        ]);
+
+        $productA = Product::create([
+            'name' => 'Apple iPhone 16 128GB Pink',
+            'category_id' => $this->category->id,
+            'sale_price' => 899,
+            'grade' => 'A',
+        ]);
+
+        $this->actingAs($this->user)
+            ->getJson(route('products.search', ['q' => '16 128 pink A']))
+            ->assertOk()
+            ->assertJsonPath('0.id', $productA->id);
     }
 }

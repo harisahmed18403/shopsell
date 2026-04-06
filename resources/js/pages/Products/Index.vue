@@ -37,6 +37,7 @@
                                 <tr>
                                     <th class="px-6 py-4">Product</th>
                                     <th class="px-6 py-4">Category</th>
+                                    <th class="px-6 py-4">Condition</th>
                                     <th class="px-6 py-4">Color</th>
                                     <th class="px-6 py-4">Price</th>
                                     <th class="px-6 py-4">CeX market</th>
@@ -56,12 +57,21 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">{{ product.category || 'Uncategorised' }}</td>
+                                    <td class="px-6 py-4">{{ product.grade || 'N/A' }}</td>
                                     <td class="px-6 py-4">{{ product.color || 'N/A' }}</td>
                                     <td class="px-6 py-4">{{ formatCurrency(product.sale_price) }}</td>
                                     <td class="px-6 py-4">
-                                        <div v-if="product.cex_best_variant" class="space-y-1 text-xs">
-                                            <p class="text-sky-300">Sell: {{ formatCurrency(product.cex_best_variant.sale_price) }}</p>
-                                            <p class="text-rose-300">Cash: {{ formatCurrency(product.cex_best_variant.cash_price) }}</p>
+                                        <div v-if="product.cex_variants.length" class="flex flex-wrap gap-2 text-xs">
+                                            <div
+                                                v-for="variant in product.cex_variants"
+                                                :key="variant.grade"
+                                                class="min-w-[88px] rounded-xl border border-white/10 bg-white/5 px-3 py-2"
+                                            >
+                                                <p class="font-semibold uppercase tracking-[0.2em] text-slate-400">{{ variant.grade }}</p>
+                                                <p class="mt-1 text-sky-300">S: {{ formatCurrency(variant.sale_price) }}</p>
+                                                <p class="text-rose-300">C: {{ formatCurrency(variant.cash_price) }}</p>
+                                                <p class="text-amber-300">V: {{ formatCurrency(variant.voucher_price) }}</p>
+                                            </div>
                                         </div>
                                         <span v-else class="text-xs text-slate-500">No market data</span>
                                     </td>
@@ -78,7 +88,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="products.length === 0">
-                                    <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-500">
+                                    <td colspan="7" class="px-6 py-12 text-center text-sm text-slate-500">
                                         No products matched the current filters.
                                     </td>
                                 </tr>
@@ -123,13 +133,16 @@ const props = defineProps<SharedPageProps & {
         id: number;
         name: string;
         category: string | null;
+        grade: string | null;
         color: string | null;
         sale_price: number;
         image_url: string | null;
-        cex_best_variant: {
+        cex_variants: Array<{
+            grade: string;
             sale_price: number;
             cash_price: number;
-        } | null;
+            voucher_price: number;
+        }>;
     }>;
     pagination: {
         total: number;

@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\ProductSearchService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function search(Request $request)
+    public function search(Request $request, ProductSearchService $productSearchService)
     {
         $search = $request->input('q');
 
@@ -18,24 +19,9 @@ class ProductController extends Controller
             return response()->json([]);
         }
 
-        $tokens = array_filter(explode(' ', $search), fn ($t) => strlen(trim($t)) > 0);
-
-        // 1. Find matching IDs from products table
-        $productQuery = Product::query()->select('id');
-        foreach ($tokens as $token) {
-            $productQuery->where('name', 'like', "%{$token}%");
-        }
-        $productIds = $productQuery->limit(50)->pluck('id')->toArray();
-
-        // 2. Find matching IDs from cex_products table if we don't have enough
-        if (count($productIds) < 20) {
-            $cexQuery = \App\Models\CexProduct::query()->select('product_id');
-            foreach ($tokens as $token) {
-                $cexQuery->where('name', 'like', "%{$token}%");
-            }
-            $cexProductIds = $cexQuery->limit(50)->pluck('product_id')->toArray();
-            $productIds = array_unique(array_merge($productIds, $cexProductIds));
-        }
+        $tokens = $productSearchService->tokens($search);
+        $gradeTokens = $productSearchService->gradeTokens($tokens);
+        $productIds = $productSearchService->autocompleteProductIds($tokens);
 
         if (empty($productIds)) {
             return response()->json([]);
@@ -45,18 +31,9 @@ class ProductController extends Controller
         $products = Product::with('cexProducts')
             ->whereIn('id', $productIds)
             ->get()
-            ->map(function ($product) use ($tokens) {
-                // Get variants, unique by grade, sorted A -> B -> C
-                $variants = $product->cexProducts->sortByDesc('sale_price') // Take most expensive if duplicate grade
-                    ->unique('grade')
-                    ->sortBy(function ($cex) {
-                        return match ($cex->grade) {
-                            'A' => 1,
-                            'B' => 2,
-                            'C' => 3,
-                            default => 4
-                        };
-                    })->values()->map(function ($cex) {
+            ->map(function ($product) use ($productSearchService, $tokens, $gradeTokens) {
+                $variants = $productSearchService->groupedVariants($product)
+                    ->map(function ($cex) {
                         return [
                             'grade' => $cex->grade ?? 'N/A',
                             'sale' => $cex->sale_price,
@@ -65,22 +42,13 @@ class ProductController extends Controller
                         ];
                     });
 
-                // Calculate relevance score for sorting
-                $productScore = 0;
-                $productFullName = strtoupper($product->name);
-                foreach ($tokens as $token) {
-                    if (str_contains($productFullName, strtoupper($token))) {
-                        $productScore++;
-                    }
-                }
-
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
                     'image_url' => $product->cexProducts->first()?->image_url ?? 'https://via.placeholder.com/150',
                     'variants' => $variants ?? [],
                     'url' => route('products.show', $product),
-                    'score' => $productScore,
+                    'score' => $productSearchService->scoreProduct($product, $tokens, $gradeTokens),
                 ];
             })
             ->sortByDesc('score')
@@ -93,12 +61,15 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): \Illuminate\Http\JsonResponse|Response
+    public function index(Request $request, ProductSearchService $productSearchService): \Illuminate\Http\JsonResponse|Response
     {
         $query = Product::with(['category', 'cexProducts']);
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%'.$request->search.'%');
+            $tokens = $productSearchService->tokens($request->string('search')->toString());
+            $gradeTokens = $productSearchService->gradeTokens($tokens);
+            $productSearchService->applyTokenFilters($query, $tokens);
+            $productSearchService->applyGradePriorityOrdering($query, $gradeTokens);
         }
 
         if ($request->filled('category_id')) {
@@ -119,20 +90,26 @@ class ProductController extends Controller
                 'category_id' => $request->string('category_id')->toString(),
             ],
             'categories' => $categories,
-            'products' => $products->through(fn (Product $product) => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'category' => $product->category?->name,
-                'color' => $product->color,
-                'sale_price' => (float) ($product->sale_price ?? 0),
-                'image_url' => $product->cexProducts->first()?->image_url,
-                'cex_best_variant' => optional($product->cexProducts->where('grade', 'B')->first() ?? $product->cexProducts->first(), function ($variant) {
-                    return [
+            'products' => $products->through(function (Product $product) use ($productSearchService) {
+                $variants = $productSearchService->groupedVariants($product)
+                    ->map(fn ($variant) => [
+                        'grade' => $variant->grade ?? 'N/A',
                         'sale_price' => (float) $variant->sale_price,
                         'cash_price' => (float) $variant->cash_price,
-                    ];
-                }),
-            ])->items(),
+                        'voucher_price' => (float) $variant->voucher_price,
+                    ]);
+
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'category' => $product->category?->name,
+                    'grade' => $product->grade,
+                    'color' => $product->color,
+                    'sale_price' => (float) ($product->sale_price ?? 0),
+                    'image_url' => $product->cexProducts->first()?->image_url,
+                    'cex_variants' => $variants,
+                ];
+            })->items(),
             'pagination' => [
                 'current_page' => $products->currentPage(),
                 'last_page' => $products->lastPage(),
