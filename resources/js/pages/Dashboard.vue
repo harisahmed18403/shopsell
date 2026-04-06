@@ -8,6 +8,8 @@
                 </h1>
             </div>
 
+            <ProductSearchSelect v-model="selectedProduct" />
+
             <div class="grid gap-4 md:grid-cols-4">
                 <article
                     v-for="metric in metrics"
@@ -96,8 +98,13 @@
 </template>
 
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+
 import MetricBars from '@/components/app/MetricBars.vue';
+import ProductSearchSelect, { type SearchProduct } from '@/components/app/ProductSearchSelect.vue';
 import TrendBars from '@/components/app/TrendBars.vue';
+import { appPath } from '@/lib/app-path';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { SharedPageProps } from '@/types';
@@ -124,10 +131,20 @@ const props = defineProps<SharedPageProps & {
     recentTransactions: DashboardTransaction[];
 }>();
 
+const selectedProduct = ref<SearchProduct | null>(null);
+
 const metrics = [
     { label: 'Today', value: props.dailySales, detail: 'Revenue from sell and repair jobs completed today.' },
     { label: 'This week', value: props.weeklySales, detail: `${props.transactionCount} transactions recorded in the last 30 days.` },
     { label: 'This month', value: props.monthlySales, detail: `Average ticket ${formatCurrency(props.averageTicket || 0)}.` },
     { label: 'Outstanding', value: props.outstandingBalance, detail: 'Remaining balance still unpaid across recorded transactions.' },
 ];
+
+watch(selectedProduct, (product) => {
+    if (! product) {
+        return;
+    }
+
+    router.visit(appPath(props.app.base_path, `/products/${product.id}`));
+});
 </script>
