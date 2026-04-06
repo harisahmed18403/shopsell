@@ -258,6 +258,45 @@ class TransactionTest extends TestCase
         $response->assertHeader('content-disposition');
     }
 
+    public function test_invoice_view_displays_item_price_column()
+    {
+        $this->actingAs($this->user)->post(route('transactions.store'), [
+            'type' => 'sell',
+            'customer_name' => 'Rana Ahsan Ali',
+            'payment_method' => 'Cash',
+            'amount_paid' => 850,
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'brand' => 'Apple',
+                    'model' => 'iPhone 16 Pro Max',
+                    'storage' => '256 GB',
+                    'color' => 'Black Titanium',
+                    'imei_1' => '354760243811073',
+                    'imei_2' => '354760243542140',
+                    'condition_grade' => 'A',
+                    'quantity' => 1,
+                    'price' => 850,
+                ],
+            ],
+        ]);
+
+        $transaction = \App\Models\Transaction::with(['items.product', 'customer', 'user'])->firstOrFail();
+
+        $html = view('transactions.invoice', [
+            'transaction' => $transaction,
+            'business' => [
+                'name' => 'PhoneWorks Lancaster',
+                'address_lines' => ['65 Penny Street', 'Lancaster', 'LA1 1XF'],
+                'phone' => '01524 935470',
+            ],
+        ])->render();
+
+        $this->assertStringContainsString('Price', $html);
+        $this->assertStringContainsString('£850.00', $html);
+        $this->assertStringContainsString('font-size: 10px;', $html);
+    }
+
     public function test_user_can_delete_transaction()
     {
         $this->actingAs($this->user)->post(route('transactions.store'), [

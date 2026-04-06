@@ -7,22 +7,22 @@
         body {
             font-family: DejaVu Sans, sans-serif;
             color: #0f172a;
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 10px;
+            line-height: 1.35;
             margin: 0;
-            padding: 24px;
+            padding: 18px;
             background: #f8fafc;
         }
 
         .sheet {
             background: #ffffff;
             border: 1px solid #cbd5e1;
-            padding: 28px;
+            padding: 22px;
         }
 
         .row {
             width: 100%;
-            margin-bottom: 22px;
+            margin-bottom: 18px;
         }
 
         .left,
@@ -47,15 +47,15 @@
         }
 
         h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 20px;
+            margin-bottom: 8px;
         }
 
         h2 {
-            font-size: 14px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: #475569;
         }
 
@@ -64,7 +64,7 @@
         }
 
         .meta {
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .meta div {
@@ -79,22 +79,27 @@
         th,
         td {
             border: 1px solid #cbd5e1;
-            padding: 8px;
+            padding: 6px;
             vertical-align: top;
             text-align: left;
+            font-size: 9px;
         }
 
         th {
             background: #e2e8f0;
-            font-size: 11px;
+            font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 0.06em;
         }
 
+        .text-right {
+            text-align: right;
+        }
+
         .summary {
-            width: 320px;
+            width: 280px;
             margin-left: auto;
-            margin-top: 18px;
+            margin-top: 14px;
         }
 
         .summary td:first-child {
@@ -103,16 +108,16 @@
         }
 
         .terms {
-            margin-top: 26px;
-            font-size: 10.5px;
+            margin-top: 20px;
+            font-size: 9px;
         }
 
         .terms p {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .thank-you {
-            margin-top: 16px;
+            margin-top: 12px;
             font-weight: 700;
         }
     </style>
@@ -174,6 +179,7 @@
                         <th>IMEI 1</th>
                         <th>IMEI 2</th>
                         <th>Condition</th>
+                        <th class="text-right">Price</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -191,6 +197,7 @@
                             <td>{{ $item->imei_1 ?: 'N/A' }}</td>
                             <td>{{ $item->imei_2 ?: 'N/A' }}</td>
                             <td>{{ $item->condition_grade ?: 'N/A' }}</td>
+                            <td class="text-right">£{{ number_format((float) $item->price, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
