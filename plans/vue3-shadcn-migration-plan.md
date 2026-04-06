@@ -8,6 +8,7 @@ The target state is:
 
 - Laravel remains the backend and source of truth for routing, auth, validation, persistence, and domain logic.
 - Vue 3 becomes the primary frontend rendering layer for authenticated and guest UI.
+- TypeScript is used for the new frontend application code.
 - `shadcn-vue` becomes the main component system.
 - Existing backend endpoints and controller logic are reused as much as possible.
 - Any backend changes should be limited to presentation transport concerns only, such as returning Inertia responses or view data shaped for Vue pages.
@@ -56,6 +57,14 @@ Important existing behavior to preserve:
 
 Use Laravel + Inertia.js + Vue 3 + `shadcn-vue`.
 
+Confirmed project decisions:
+
+- Use Inertia.js as the Laravel-to-Vue bridge.
+- Use TypeScript for the Vue frontend.
+- Include auth pages in the migration scope.
+- Keep invoice/PDF rendering Blade-based.
+- Allow a broader frontend redesign as long as functionality and backend behavior are preserved.
+
 Why this is the lowest-risk route:
 
 - It lets Laravel continue owning routes, middleware, controllers, auth, validation, redirects, and sessions.
@@ -81,6 +90,7 @@ Avoid as primary strategy:
 ### Frontend
 
 - Add Vue 3 and Inertia client bootstrap under `resources/js`
+- Use TypeScript-first entrypoints, pages, composables, and shared utilities
 - Create page components under a structure similar to:
   - `resources/js/pages/Auth/*`
   - `resources/js/pages/Dashboard/*`
@@ -94,7 +104,9 @@ Avoid as primary strategy:
   - `resources/js/layouts/*`
   - `resources/js/components/ui/*`
   - `resources/js/components/app/*`
+  - `resources/js/composables/*`
   - `resources/js/lib/*`
+  - `resources/js/types/*`
 
 ### UI System
 
@@ -111,6 +123,8 @@ Expected additions:
 - `@inertiajs/vue3`
 - `@inertiajs/progress`
 - `@vitejs/plugin-vue`
+- `typescript`
+- `vue-tsc`
 - `shadcn-vue`
 - `vue-sonner` or equivalent toast package if needed
 - `class-variance-authority`
@@ -172,7 +186,7 @@ These can be migrated either early for visual consistency or slightly later to r
 
 Recommendation:
 
-- Migrate auth after the core Inertia/Vue shell is stable but before final UI cleanup. That keeps Breeze-related Blade removal manageable.
+- Include auth as part of the main migration plan, but schedule implementation after the shared guest/app shells and form primitives are stable. That keeps the auth conversion consistent with the rest of the redesign.
 
 ## Detailed Work Plan
 
@@ -195,6 +209,7 @@ Tasks:
 Deliverables:
 
 - Final architecture decision: Inertia + Vue 3
+- TypeScript conventions for page props, shared models, and form state
 - Page migration matrix with owner/priority/risk
 - Acceptance criteria for parity
 
@@ -207,12 +222,13 @@ Goals:
 
 Tasks:
 
-- Install Vue 3, Inertia, Vue Vite plugin, `shadcn-vue`, and utility dependencies.
+- Install Vue 3, Inertia, Vue Vite plugin, TypeScript tooling, `shadcn-vue`, and utility dependencies.
 - Update `vite.config.js` for Vue support.
-- Replace the current JS bootstrap with an Inertia/Vue app entrypoint.
+- Replace the current JS bootstrap with an Inertia/Vue TypeScript app entrypoint.
 - Add root app mounting and progress indicator.
+- Add TypeScript configuration for Vite, Vue SFCs, aliases, and shared types.
 - Set up shared page props for auth user, flash messages, route metadata, and validation state.
-- Add a typed or at least well-structured frontend utilities layer for:
+- Add a typed frontend utilities layer for:
   - route helpers
   - money/date formatting
   - flash notifications
@@ -233,6 +249,7 @@ Exit criteria:
 Goals:
 
 - Establish the reusable Vue UI layer before mass page migration.
+- Establish the foundation for a broader UI redesign rather than a strict visual clone of the current Blade admin.
 
 Tasks:
 
@@ -290,10 +307,12 @@ Tasks:
 Notes:
 
 - Reports should keep backend aggregation logic in PHP. Only rendering moves to Vue.
+- The redesign can materially improve layout, information hierarchy, and navigation as long as route behavior and data meaning stay consistent.
 
 Exit criteria:
 
 - Read-only or read-mostly pages match current behavior and styling quality.
+- Each migrated page has its own verification pass, relevant backend test coverage, frontend component/page tests, and a dedicated commit before moving on.
 
 ## Phase 4: Migrate Standard CRUD Forms
 
@@ -319,11 +338,12 @@ Tasks:
 
 Decision point:
 
-- Choose whether every form uses Inertia form helpers or a mixed approach. Prefer consistency.
+- Use Inertia form helpers consistently, wrapped in typed form models and reusable field abstractions.
 
 Exit criteria:
 
 - Standard CRUD flows operate end to end with no business-logic regressions.
+- Each CRUD page is committed only after its save/cancel/validation states have been tested in both backend and frontend test layers.
 
 ## Phase 5: Migrate Complex Transaction Flows
 
@@ -360,6 +380,7 @@ Important constraint:
 Exit criteria:
 
 - Transaction create/edit flows fully work in Vue and preserve inventory/financial behavior.
+- The transaction page migration is split into smaller commits with tests for line items, search, totals, and submit behavior before the next screen is touched.
 
 ## Phase 6: Auth and Account Flows
 
@@ -372,6 +393,7 @@ Tasks:
 - Migrate login/register/password/email verification/confirm password pages to Vue.
 - Keep Laravel auth controllers and middleware unchanged.
 - Ensure validation, password reset tokens, verification links, and redirects still work.
+- Use the redesign latitude to improve the guest/auth UX rather than matching Breeze markup one-for-one.
 
 Exit criteria:
 
@@ -446,19 +468,86 @@ Use JSON endpoints for:
 - Preserve and extend feature tests around routes, validation, redirects, and database effects.
 - Add tests ensuring migrated routes still enforce auth/super-admin middleware.
 - Add tests for transaction and inventory invariants before UI migration begins.
+- Add or update Laravel feature tests for each migrated page so every route continues to verify:
+  - auth/authorization
+  - page response success
+  - expected props/data presence
+  - validation behavior for forms
+  - redirects/flash messages after successful actions
+
+### Frontend test tooling
+
+Recommended stack:
+
+- `vitest` for frontend unit and component tests
+- `@vue/test-utils` for mounting and interacting with Vue components/pages
+- `jsdom` for DOM-based component assertions
+- `@testing-library/vue` if preferred for user-centric interaction assertions
+- `playwright` for end-to-end workflow coverage
+
+Purpose of each layer:
+
+- Laravel feature tests verify route access, validation, redirects, and backend-side behavior.
+- Vue component tests verify that individual UI components function correctly.
+- Vue page tests verify that page-level components render props correctly and react to user input.
+- Playwright tests verify real browser behavior for critical flows end to end.
 
 ### Frontend tests
 
-Recommended:
+Required coverage expectations:
 
-- Component tests for complex Vue components, especially transaction line-item behavior
-- End-to-end browser tests for critical workflows:
+- Write frontend component tests for each new shared component that has behavior, such as:
+  - dialogs
+  - forms and field wrappers
+  - tables with sorting/filtering/pagination if added
+  - navigation controls
+  - toasts/alerts
+  - search/autocomplete inputs
+- Write page-level unit/component tests for each migrated page to confirm:
+  - the page renders with expected props
+  - key actions and events work
+  - validation and error UI appears correctly
+  - conditional UI states render correctly
+- Add focused component tests for complex page sections, especially:
+  - transaction line-item editor
+  - product search/autocomplete
+  - totals calculations display
+  - auth form interactions
+  - dashboard/report chart wrappers
+- Add end-to-end browser tests for critical workflows:
   - login
   - create product
   - add inventory item
   - create transaction
   - edit profile
   - admin user management
+
+### Page-by-page testing rule
+
+For every migrated page:
+
+1. Migrate the page.
+2. Add or update backend feature tests for that page.
+3. Add or update frontend page/component tests for that page.
+4. Manually verify the page in the browser.
+5. Commit that page migration only after the page-specific tests pass.
+
+This should be treated as a hard rule, not a best-effort guideline.
+
+### How to test whether components are functioning
+
+Use Vue component tests as the primary proof that components function correctly.
+
+Examples of what to test in component tests:
+
+- a button emits the expected event and handles disabled/loading states
+- a dialog opens, closes, traps focus if implemented, and confirms/cancels correctly
+- a form field shows labels, values, help text, and validation errors correctly
+- a data table renders rows and responds to sorting/filter changes
+- an autocomplete component debounces input, shows results, handles empty/error/loading states, and emits the selected item
+- the transaction line-item component recalculates totals when quantity or price changes
+
+Use Playwright for integration confirmation when component behavior depends on full-page interaction, routing, or browser APIs.
 
 ### Regression focus
 
@@ -475,10 +564,12 @@ Highest-risk regressions:
 Recommended rollout:
 
 1. Build the Vue/Inertia foundation on a feature branch.
-2. Migrate pages incrementally in small reviewable PRs or commits.
-3. Keep the application deployable after each phase.
-4. Validate each migrated area with focused manual and automated testing.
-5. Remove old frontend dependencies only after equivalent replacement is complete.
+2. Migrate one page or one tightly related page cluster at a time.
+3. For each page, write or update backend tests and frontend component/page tests before considering the page complete.
+4. Run the relevant tests and manually verify that page in the browser.
+5. Commit after each page or page cluster reaches a passing state.
+6. Keep the application deployable after each phase.
+7. Remove old frontend dependencies only after equivalent replacement is complete.
 
 If branch lifespan is long:
 
@@ -527,7 +618,7 @@ Expected new frontend structure:
 
 ```text
 resources/js/
-  app.js
+  app.ts
   layouts/
   pages/
   components/
@@ -535,6 +626,7 @@ resources/js/
     ui/
   composables/
   lib/
+  types/
 ```
 
 Planning/docs deliverables:
@@ -543,33 +635,36 @@ Planning/docs deliverables:
 - `plans/page-migration-checklist.md`
 - `plans/component-mapping.md`
 - `plans/testing-regression-checklist.md`
+- `plans/frontend-testing-strategy.md`
 
 ## Recommended Execution Order
 
 1. Add Inertia + Vue + Vite support.
-2. Establish `shadcn-vue` and shared layout/components.
-3. Migrate dashboard/reports and read-mostly admin pages.
-4. Migrate product/inventory/admin/profile CRUD screens.
-5. Migrate transaction flows.
-6. Migrate auth pages.
-7. Remove DaisyUI/Alpine/obsolete Blade views.
+2. Add frontend testing infrastructure with Vitest, Vue Test Utils, and Playwright.
+3. Establish `shadcn-vue` and shared layout/components.
+4. Migrate dashboard/reports and read-mostly admin pages, testing and committing each page as it lands.
+5. Migrate product/inventory/admin/profile CRUD screens, testing and committing each page as it lands.
+6. Migrate transaction flows in smaller tested commits.
+7. Migrate auth pages with page-level and component-level coverage.
+8. Remove DaisyUI/Alpine/obsolete Blade views.
 
-## Clarifications Needed Before Implementation
+## Confirmed Scope Decisions
 
-These points should be confirmed before actual migration work begins:
+The following scope decisions are now fixed for implementation:
 
-1. Should the migration use Inertia.js as the Laravel-to-Vue bridge, or do you want a fully separate Vue SPA frontend? This plan assumes Inertia because it best preserves the backend.
-2. Do you want invoice/PDF templates to stay Blade-based if that avoids unnecessary risk? This plan recommends yes.
-3. Do you want auth pages included in the migration, or should the first implementation phase focus only on the authenticated app?
-4. Is TypeScript desired for the new Vue frontend, or should the migration stay in JavaScript for lower change volume?
-5. Do you want the final UI to stay close to the current admin layout/flow, or is a broader UX redesign acceptable as long as functionality is preserved?
+1. The migration will use Inertia.js as the Laravel-to-Vue bridge.
+2. Invoice/PDF templates will remain Blade-based.
+3. Auth pages are included in the migration scope.
+4. The Vue frontend will use TypeScript.
+5. A broader frontend redesign is acceptable as long as functionality and backend behavior are preserved.
 
 ## Recommendation
 
 Proceed with:
 
 - Laravel + Inertia.js + Vue 3
+- TypeScript for the frontend codebase
 - `shadcn-vue` for UI primitives
 - Blade retained only where server-rendered output is inherently appropriate, especially PDF invoices
 - Minimal backend changes limited to response transport and shared props
-- Page-by-page migration, with transactions treated as the final major interactive migration
+- Page-by-page migration, with auth included, transactions treated as the final major interactive migration, and every migrated page committed only after passing page-specific tests
